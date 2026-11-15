@@ -3,7 +3,7 @@
 Running log of decisions, conflicts and setup steps. If work is interrupted, resume from **Current stage**.
 
 ## Current stage
-Stage 6 — UI languages (translation files being written), then final polish and the full demo walk on the deployed URL.
+Build complete. Remaining blocker: connect Supabase (one manual click on the Supabase terms, see Manual steps). All 7 UI languages done.
 
 Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student side; engagement + impact reports; roadmaps, notifications, admin queue, student dashboard).
 
@@ -13,7 +13,7 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 | Next.js 16.4 (App Router) + Tailwind 4 | Done | `kadam/` |
 | Vercel project | Done | `mesa-90a8/kadam` → https://kadam-virid.vercel.app. Linked and deployed with the Vercel CLI (no Vercel connector was available in this session). Env vars set: `SESSION_SECRET`, `DEMO_MODE=true`, `GEMINI_MODEL`, `SARVAM_STT_MODEL` (production, preview, development). |
 | Supabase project | **Blocked — needs one click from a person** | No Supabase connector was available, and the Supabase CLI is not logged in. Provisioning through the Vercel Marketplace (`vercel integration add supabase`) stops at "accept Supabase terms in the browser". See Manual steps. |
-| Database until then | Done (fallback) | With no `POSTGRES_URL`/`DATABASE_URL`, the app runs on an embedded Postgres (PGlite) with the same schema and seed. Locally it persists in `.data/`. On Vercel it lives in `/tmp` of the running instance: it works for a demo session, but resets to the seed after the instance goes cold. |
+| Database until then | Partial (fallback) | With no `POSTGRES_URL`/`DATABASE_URL`, the app runs on an embedded Postgres (PGlite) with the same schema and seed. Locally it persists in `.data/` and the whole demo path works. **On Vercel it is per-instance and temporary**: seeded pages read fine, but a multi-step write (e.g. creating a problem, then answering follow-ups) can land on a different instance and lose the draft. Verified on 15 Nov: the Hindi problem draft disappeared mid-intake. The deployed demo path needs Supabase connected. |
 | Supabase auto-setup | Done | On first connection to an empty Postgres, the app creates the schema, the five private storage buckets and the demo data by itself. The SQL is also in `supabase/migrations/20261115000000_init.sql`. |
 | Email OTP | Built, not live | Uses Supabase Auth (`signInWithOtp` + `verifyOtp` type `email`). Without Supabase the sign-in page shows a friendly "couldn't send a code" message; everyone can still sign in through `/demo`. |
 | Gemini key | Missing | Not in the environment. Every AI feature falls back to saved seed outputs or rule-based answers, so the demo works without it. |
@@ -46,6 +46,9 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 23. **A sample CV for the live demo** is at `docs/demo/Ananya_Das_CV.pdf` and also downloadable from `/samples/ananya-das-cv.pdf` so the presenter can upload it from a phone.
 24. **Admin reviews** show a 72-hour countdown per ID.
 25. **Print stylesheet** keeps the report's colours; "Download PDF" opens the browser's print dialog.
+
+26. **Phones**: the Take up card appears right under the fit reason on small screens.
+27. **UI translations** (hi, kn, ta, or, bn, gu) written for all 581 interface strings; placeholders and keys validated against English.
 
 ## Conflicts resolved
 1. **Connectors**: the prompt said Supabase and Vercel connectors were available; neither was attached to this session. Used the Vercel CLI (logged in) for Vercel, and built a self-bootstrapping Supabase path plus an embedded-Postgres fallback for the database.

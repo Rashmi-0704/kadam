@@ -32,31 +32,8 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
   }
   const verified = profile.verification_status === "verified";
   const active = mine && mine.status !== "withdrawn";
-  return (
-    <div>
-      <BackLink href="/student/problems" label={t("nav.problems")} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
-        <div>
-          <p className="font-semibold text-ink-3">{p.business_name} · {p.business_city}</p>
-          <h1 className="mt-1 text-[28px] leading-tight font-bold sm:text-[34px]">{p.title}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <TakerCount n={p.takers} t={t} />
-            <span className="text-sm text-ink-3">{t("problem.posted", { date: fmtDate(p.live_at ?? p.created_at, lang) })}</span>
-          </div>
-          <div className="mt-4"><CategoryChips c={p.categories} t={t} full /></div>
-          {fit && (
-            <p className="mt-5 flex gap-2 rounded-2xl bg-saffron-soft px-4 py-3">
-              <span aria-hidden="true" className="font-bold text-saffron-deep">✦</span>
-              <span><strong>{t("problem.why_you")}</strong> {fit}</span>
-            </p>
-          )}
-          <Section title={t("bp.statement")} className="mt-8">
-            <div className="card px-5 py-2"><ProblemStatement p={p} t={t} /></div>
-          </Section>
-        </div>
-
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <div className="card space-y-3 p-5">
+  const action = (
+    <div className="card space-y-3 p-5">
             {active ? (
               <>
                 <p className="font-bold">{t("problem.you_are_on")}</p>
@@ -76,7 +53,33 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
               </>
             )}
           </div>
+  );
+  return (
+    <div>
+      <BackLink href="/student/problems" label={t("nav.problems")} />
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <div>
+          <p className="font-semibold text-ink-3">{p.business_name} · {p.business_city}</p>
+          <h1 className="mt-1 text-[28px] leading-tight font-bold sm:text-[34px]">{p.title}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <TakerCount n={p.takers} t={t} />
+            <span className="text-sm text-ink-3">{t("problem.posted", { date: fmtDate(p.live_at ?? p.created_at, lang) })}</span>
+          </div>
+          <div className="mt-4"><CategoryChips c={p.categories} t={t} full /></div>
+          {fit && (
+            <p className="mt-5 flex gap-2 rounded-2xl bg-saffron-soft px-4 py-3">
+              <span aria-hidden="true" className="font-bold text-saffron-deep">✦</span>
+              <span><strong>{t("problem.why_you")}</strong> {fit}</span>
+            </p>
+          )}
+          <div className="mt-5 lg:hidden">{action}</div>
+          <Section title={t("bp.statement")} className="mt-8">
+            <div className="card px-5 py-2"><ProblemStatement p={p} t={t} /></div>
+          </Section>
+        </div>
 
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="hidden lg:block">{action}</div>
           <div className="card p-5">
             <h2 className="font-bold">{t("problem.brush_up")}</h2>
             {!profile.cv_parsed ? (
