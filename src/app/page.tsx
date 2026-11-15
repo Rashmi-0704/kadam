@@ -9,19 +9,19 @@ export default async function Landing() {
   const u = await currentUser();
   return (
     <div className="overflow-x-hidden">
-      <header className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+      <header className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
         <Logo />
         <div className="ml-auto flex items-center gap-2">
           <LanguageToggle compact />
-          <Link href={u ? homeFor(u.role) : "/auth"} className="btn-primary btn-sm">{u ? t("landing.open") : t("landing.login")}</Link>
+          <Link href={u ? homeFor(u.role) : "/auth"} className="btn-primary btn-sm whitespace-nowrap">{u ? t("landing.open") : t("landing.login")}</Link>
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-8 pb-16 md:grid-cols-[1.1fr_1fr] md:pt-16">
+      <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 pt-8 pb-16 md:grid-cols-[1.1fr_1fr] md:pt-16">
         <div>
           <p className="eyebrow">{t("landing.tagline")}</p>
-          <h1 className="mt-3 text-[40px] leading-[1.05] font-extrabold sm:text-[56px]">
-            {t("landing.h1a")} <span className="relative whitespace-nowrap text-saffron-deep">{t("landing.h1b")}</span>
+          <h1 className="mt-3 text-[34px] leading-[1.08] font-extrabold break-words sm:text-[56px]">
+            {t("landing.h1a")} <span className="text-saffron-deep">{t("landing.h1b")}</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-ink-2">{t("landing.sub")}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -32,7 +32,7 @@ export default async function Landing() {
         </div>
 
         {/* Outcome preview: what a student walks away with */}
-        <div className="relative mx-auto w-full max-w-md">
+        <div className="relative mx-auto w-full max-w-md min-w-0 pl-3 sm:pl-0">
           <div className="absolute -top-4 -left-4 h-full w-full rounded-3xl bg-saffron-soft" aria-hidden="true" />
           <div className="relative card rotate-[-1.2deg] p-6 shadow-[0_20px_60px_-30px_rgba(28,26,39,0.45)]">
             <div className="flex items-center justify-between">

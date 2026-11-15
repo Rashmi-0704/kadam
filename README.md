@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kadam
 
-## Getting Started
+**Real Problems, Real Impact, Real Careers.** College students solve real problems for small businesses and NGOs, and Kadam turns the outcome into an impact report they can put on a resume.
 
-First, run the development server:
+- Live: https://kadam-virid.vercel.app
+- Quick sign-in for the demo: https://kadam-virid.vercel.app/demo (only when `DEMO_MODE=true`)
+- Source of truth: [`docs/Kadam_Context_Final.md`](docs/Kadam_Context_Final.md) · Build decisions: [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md)
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000/demo. Without `POSTGRES_URL` the app uses an embedded Postgres in `.data/` with demo data already loaded.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Name | Needed for |
+|---|---|
+| `SESSION_SECRET` | Signing the session cookie (any long random string) |
+| `DEMO_MODE` | `true` enables `/demo` quick sign-in and "Reset accounts" |
+| `POSTGRES_URL` (or `DATABASE_URL`) | Supabase Postgres. Empty → embedded Postgres fallback |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or the `NEXT_PUBLIC_` versions) | Email OTP through Supabase Auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | Private storage buckets and signed URLs |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | All AI features (falls back to saved/rule-based results without it) |
+| `SARVAM_API_KEY`, `SARVAM_STT_MODEL` | Indian speech-to-text for voice problems (falls back to the browser's speech recognition) |
 
-## Learn More
+All keys are read on the server only. The app creates its schema, storage buckets and demo data by itself the first time it connects to an empty Supabase database. The SQL is in `supabase/migrations/`.
 
-To learn more about Next.js, take a look at the following resources:
+## Demo path
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. `/demo` → **Sharma Kirana Store** → New problem → Speak (Hindi) → answer follow-ups → Approve and go live.
+2. `/demo` → **Ananya Das** → Profile → upload `docs/demo/Ananya_Das_CV.pdf` (also at `/samples/ananya-das-cv.pdf`) → chat → approve paths.
+3. Problems → Suggested for you → open the new problem → skills to brush up → Take up.
+4. Chat → Submit. `/demo` → Sharma Kirana → open the submission → I've received it → In use → post an impact update → Open impact report (public link, Download PDF).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Use **Reset accounts** on `/demo` to start over.

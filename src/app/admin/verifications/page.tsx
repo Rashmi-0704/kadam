@@ -9,6 +9,10 @@ import { SubmitButton } from "@/components/SubmitButton";
 
 export const metadata = { title: "ID checks" };
 
+function hoursLeftOf(submitted: unknown) {
+  return Math.max(0, 72 - Math.floor((Date.now() - new Date(String(submitted)).getTime()) / 36e5));
+}
+
 export default async function AdminVerifications() {
   const user = await requireUser("admin");
   const t = await getT();
@@ -32,7 +36,7 @@ export default async function AdminVerifications() {
         ) : (
           <ul className="grid gap-4 lg:grid-cols-2">
             {withUrls.map((p) => {
-              const hoursLeft = Math.max(0, 72 - Math.floor((Date.now() - new Date(p.submitted_at).getTime()) / 36e5));
+              const hoursLeft = hoursLeftOf(p.submitted_at);
               return (
                 <li key={p.id} className="card overflow-hidden">
                   {p.url && (
