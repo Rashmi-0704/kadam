@@ -3,6 +3,7 @@ import { z } from "zod";
 import { geminiJson, geminiCanRead, toBase64, type Part } from "./gemini";
 import { ROLES, roleTitle, slugify, SECTORS, PROBLEM_TYPES, DIFFICULTIES, TIME_NEEDED, WORK_MODES, type Categories } from "@/db/taxonomy";
 import type { Section, Topic, Resource } from "@/db/roadmaps-data";
+import { pickTitle, heuristicCategories } from "./heuristics";
 
 const LANG_NAME: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada", ta: "Tamil", or: "Odia", bn: "Bengali", gu: "Gujarati" };
 const STYLE = "Use short, plain sentences. Never call Kadam an internship platform or job board. Never describe business owners as uneducated.";
@@ -399,9 +400,9 @@ export async function draftProblem(input: { transcript: ChatTurn[]; business: { 
   const answers = input.transcript.filter((t) => t.role === "user").map((t) => t.text.trim());
   const f = (i: number) => answers[i] ?? "";
   const problem = f(0);
-  const firstSentence = problem.split(/[.!?।\n]/)[0]?.trim() || problem;
+  const title = pickTitle(problem);
   const draft = {
-    title: firstSentence.length > 70 ? firstSentence.slice(0, 67).trim() + "…" : firstSentence,
+    title,
     problem,
     background: f(1) || `${input.business.name}, ${input.business.city}.`,
     current_process: f(2),
@@ -410,42 +411,10 @@ export async function draftProblem(input: { transcript: ChatTurn[]; business: { 
     expected_timeline: f(5),
     resources_provided: f(6),
   };
-  return { ...draft, categories: heuristicCategories(answers.join(" "), draft.expected_timeline, input.business) };
-}
-
-const TYPE_RULES: [string, string[], string[], string[]][] = [
-  ["tech_build", ["app", "software", "website", "online order", "digital", "system", "ऐप", "सॉफ्टवेयर", "ऑनलाइन", "उधार", "हिसाब", "रिकॉर्ड"], ["Google Sheets", "App design", "WhatsApp"], ["software-developer", "data-analyst"]],
-  ["marketing", ["customer", "sales", "marketing", "instagram", "promote", "grow", "ग्राहक", "बिक्री", "प्रचार"], ["Instagram", "Canva", "WhatsApp Business"], ["digital-marketer", "social-media-manager"]],
-  ["data", ["data", "report", "forecast", "dashboard", "track", "डेटा", "रिपोर्ट"], ["Excel", "Google Sheets", "Data analysis"], ["data-analyst", "operations-analyst"]],
-  ["finance", ["cost", "price", "profit", "account", "gst", "loan", "खर्च", "दाम", "मुनाफा", "पैसा"], ["Excel", "Costing", "Accounting"], ["financial-analyst", "accountant"]],
-  ["operations", ["stock", "inventory", "delivery", "process", "staff", "स्टॉक", "सामान", "डिलीवरी"], ["Process mapping", "Google Sheets"], ["operations-analyst", "business-analyst"]],
-  ["design_ux", ["design", "photo", "logo", "look", "डिज़ाइन", "फोटो"], ["Canva", "Figma", "Photography"], ["ux-designer", "graphic-designer"]],
-  ["content", ["write", "story", "content", "video", "लिख", "कहानी", "वीडियो"], ["Writing", "Storytelling"], ["content-writer", "journalist"]],
-  ["research", ["research", "survey", "why", "study", "सर्वे", "क्यों"], ["Research design", "Interviewing"], ["research-analyst", "business-analyst"]],
-];
-
-function heuristicCategories(text: string, timeline: string, business: { sector: string; city: string }): Categories {
-  const scored = TYPE_RULES.map(([type, words, skills, roles]) => ({ type, skills, roles, n: hits(text, words) })).sort((a, b) => b.n - a.n);
-  const best = scored[0].n > 0 ? scored[0] : scored.find((s) => s.type === "operations")!;
-  return {
-    sector: (SECTORS as readonly string[]).includes(business.sector) ? business.sector : "other",
-    problem_type: best.type,
-    skills: best.skills,
-    difficulty: "beginner",
-    time_needed: timeNeeded(timeline),
-    work_mode: "hybrid",
-    city: business.city,
-    related_roles: best.roles,
-  };
-}
-
-function timeNeeded(t: string): string {
-  const s = lc(t);
-  const n = parseInt(s.replace(/[^\d]/g, "").slice(0, 2)) || 0;
-  if (/day|दिन|दिवस/.test(s)) return "lt1w";
-  if (/month|महीने|महीना|मास/.test(s)) return n >= 1 && n <= 2 ? "m1_2" : "m1_2";
-  if (/week|हफ्त|सप्ताह/.test(s)) return n <= 1 ? "lt1w" : n <= 4 ? "w1_4" : "m1_2";
-  return "w1_4";
+  // The problem and the desired outcome say what kind of help is needed; the other answers add context.
+  const focus = `${f(0)} ${f(3)}`;
+  const context = answers.filter((_, i) => i !== 0 && i !== 3).join(" ");
+  return { ...draft, categories: heuristicCategories(focus, context, draft.expected_timeline, input.business) };
 }
 
 function cleanCategories(c: Draft["categories"], business: { sector: string; city: string }): Categories {

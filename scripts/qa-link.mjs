@@ -10,7 +10,7 @@ const env = Object.fromEntries(
 );
 const [email, as, base = "https://kadam-virid.vercel.app"] = process.argv.slice(2);
 const sb = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-const { data, error } = await sb.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo: `${base}/auth/callback?as=${as}` } });
+const { data, error } = await sb.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo: as === "college" ? `${base}/auth/college` : `${base}/auth/callback?as=${as}` } });
 if (error) { console.error("generateLink failed:", error.message); process.exit(1); }
 fs.writeFileSync(".qa-link", data.properties.action_link);
 console.log("link written; redirect_to host:", new URL(new URL(data.properties.action_link).searchParams.get("redirect_to") ?? "http://none").host, "| has otp:", Boolean(data.properties.email_otp));
