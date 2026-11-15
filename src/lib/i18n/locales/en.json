@@ -82,8 +82,8 @@
   "auth.email_hint": "Students: use your college email to get verified straight away.",
   "auth.send_code": "Send code",
   "auth.sending": "Sending…",
-  "auth.code_title": "Enter your code",
-  "auth.code_sent": "We sent a 6-digit code to {email}.",
+  "auth.code_title": "Check your email",
+  "auth.code_sent": "We sent an email to {email}.",
   "auth.code_label": "6-digit code",
   "auth.verify": "Verify",
   "auth.checking": "Checking…",
@@ -700,5 +700,11 @@
   "rm.no_match": "No roadmap for “{q}” yet.",
   "rm.make_own": "Want one just for “{q}”?",
   "rm.create_for": "Create “{q}” roadmap",
-  "rm.rsh_link": "Full community roadmap on roadmap.sh"
+  "rm.rsh_link": "Full community roadmap on roadmap.sh",
+  "auth.link_tip_title": "Got a link instead?",
+  "auth.link_tip": "Just tap the link in the email on this phone and you'll be signed in.",
+  "auth.signing_in": "Signing you in…",
+  "auth.link_failed": "That link didn't work",
+  "auth.try_again": "Sign in again",
+  "err.link": "Links work once and expire after an hour. Ask for a new one."
 }

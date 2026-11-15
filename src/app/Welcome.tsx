@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -33,6 +33,11 @@ function Door({ href, title, sub, icon, onFocus, tone }: { href: string; title: 
 
 export function Welcome({ text, home }: { text: Text; home: string | null }) {
   const [focus, setFocus] = useState<SceneFocus>("both");
+  // A sign-in link that lands on the homepage (Supabase's default address) is passed on to the sign-in handler.
+  useEffect(() => {
+    const h = window.location.hash;
+    if (/access_token=|error_description=/.test(h)) window.location.replace(`/auth/callback${window.location.search}${h}`);
+  }, []);
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(
     () => {

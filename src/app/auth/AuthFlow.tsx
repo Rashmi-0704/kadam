@@ -95,6 +95,10 @@ export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | 
           <h1 className="text-2xl font-bold">{t("auth.code_title")}</h1>
           <p className="mt-1 text-ink-2">{t("auth.code_sent", { email })}</p>
         </div>
+        <div className="flex gap-3 rounded-2xl bg-saffron-soft p-4">
+          <span aria-hidden="true" className="text-2xl">✉️</span>
+          <p className="text-sm"><strong>{t("auth.link_tip_title")}</strong> {t("auth.link_tip")}</p>
+        </div>
         <input type="hidden" name="email" value={email} />
         <div>
           <label className="label" htmlFor="code">{t("auth.code_label")}</label>
@@ -110,6 +114,7 @@ export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | 
   return (
     <form action={(fd) => { setEditingEmail(false); sendAction(fd); }} className="space-y-5">
       <RoleBadge role={role} onChange={() => setRole(undefined)} />
+      <input type="hidden" name="role" value={role} />
       <div>
         <h1 className="text-2xl font-bold">{t("auth.title")}</h1>
         <p className="mt-1 text-ink-2">{t("auth.sub")}</p>

@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { hasSupabaseAuth, env } from "@/lib/env";
 import { authClient } from "@/lib/supabase";
@@ -16,7 +17,14 @@ export async function sendOtp(_: AuthState, form: FormData): Promise<AuthState> 
   const parsed = Email.safeParse(form.get("email"));
   if (!parsed.success) return { error: "err.email_invalid" };
   if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", email: parsed.data };
-  const { error } = await authClient().auth.signInWithOtp({ email: parsed.data, options: { shouldCreateUser: true } });
+  // The email can carry a 6-digit code ({{ .Token }}) and/or a sign-in link. The link comes back to /auth/callback.
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const as = form.get("role") === "business" ? "business" : form.get("role") === "student" ? "student" : "";
+  const { error } = await authClient().auth.signInWithOtp({
+    email: parsed.data,
+    options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/callback${as ? `?as=${as}` : ""}` },
+  });
   if (error) {
     console.warn("[otp] send failed", error.status);
     return { error: error.status === 429 ? "err.otp_rate" : "err.otp_send", email: parsed.data };
@@ -37,6 +45,19 @@ export async function verifyOtp(_: AuthState, form: FormData): Promise<AuthState
   await setSession(user!.id);
   if (!user!.role) return { ok: true, step: "role", email: email.data };
   redirect(homeFor(user!.role));
+}
+
+/** Sign-in link from the email: verify the Supabase access token on the server, then start a Kadam session. */
+export async function finishLinkSignIn(accessToken: string, as: string): Promise<{ next: string } | { error: string }> {
+  if (!hasSupabaseAuth() || !accessToken) return { error: "err.link" };
+  const { data, error } = await authClient().auth.getUser(accessToken);
+  const email = data?.user?.email?.toLowerCase();
+  if (error || !email) return { error: "err.link" };
+  let user = await one(`select id, role from users where email = $1`, [email]);
+  if (!user) user = await one(`insert into users (email) values ($1) returning id, role`, [email]);
+  await setSession(user!.id);
+  if (user!.role) return { next: homeFor(user!.role) };
+  return { next: `/auth?step=details${as === "student" || as === "business" ? `&as=${as}` : ""}` };
 }
 
 export async function chooseRole(_: AuthState, form: FormData): Promise<AuthState> {

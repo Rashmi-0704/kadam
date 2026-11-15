@@ -82,8 +82,8 @@
   "auth.email_hint": "ছাত্রছাত্রীরা: কলেজের ইমেল দিলে সঙ্গে সঙ্গে যাচাই হয়ে যাবে।",
   "auth.send_code": "কোড পাঠান",
   "auth.sending": "পাঠানো হচ্ছে…",
-  "auth.code_title": "কোডটা দিন",
-  "auth.code_sent": "{email}-এ একটা 6 সংখ্যার কোড পাঠানো হয়েছে।",
+  "auth.code_title": "আপনার ইমেল দেখুন",
+  "auth.code_sent": "{email}-এ ইমেল পাঠিয়েছি।",
   "auth.code_label": "6 সংখ্যার কোড",
   "auth.verify": "যাচাই করুন",
   "auth.checking": "দেখা হচ্ছে…",
@@ -700,5 +700,11 @@
   "rm.no_match": "“{q}”-এর জন্য এখনও রোডম্যাপ নেই।",
   "rm.make_own": "শুধু “{q}”-এর জন্য চান?",
   "rm.create_for": "“{q}” রোডম্যাপ তৈরি করুন",
-  "rm.rsh_link": "roadmap.sh-এ পুরো কমিউনিটি রোডম্যাপ"
+  "rm.rsh_link": "roadmap.sh-এ পুরো কমিউনিটি রোডম্যাপ",
+  "auth.link_tip_title": "কোডের বদলে লিংক এসেছে?",
+  "auth.link_tip": "এই ফোনেই ইমেলের লিংকে ট্যাপ করুন, লগ ইন হয়ে যাবেন।",
+  "auth.signing_in": "লগ ইন হচ্ছে…",
+  "auth.link_failed": "লিংকটি কাজ করেনি",
+  "auth.try_again": "আবার লগ ইন করুন",
+  "err.link": "লিংক একবারই, এক ঘণ্টা কাজ করে। নতুন লিংক চান।"
 }

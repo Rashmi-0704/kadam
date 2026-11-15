@@ -82,8 +82,8 @@
   "auth.email_hint": "વિદ્યાર્થીઓ: કોલેજનો ઇમેલ વાપરો તો તરત વેરિફાય થઈ જશો.",
   "auth.send_code": "કોડ મોકલો",
   "auth.sending": "મોકલાય છે…",
-  "auth.code_title": "તમારો કોડ નાખો",
-  "auth.code_sent": "અમે {email} પર 6 આંકડાનો કોડ મોકલ્યો છે.",
+  "auth.code_title": "તમારો ઇમેલ જુઓ",
+  "auth.code_sent": "{email} પર ઇમેલ મોકલ્યો છે.",
   "auth.code_label": "6 આંકડાનો કોડ",
   "auth.verify": "વેરિફાય કરો",
   "auth.checking": "તપાસાય છે…",
@@ -700,5 +700,11 @@
   "rm.no_match": "“{q}” માટે હજી કોઈ રોડમેપ નથી.",
   "rm.make_own": "ફક્ત “{q}” માટે જોઈએ છે?",
   "rm.create_for": "“{q}” રોડમેપ બનાવો",
-  "rm.rsh_link": "roadmap.sh પર આખો કમ્યુનિટી રોડમેપ"
+  "rm.rsh_link": "roadmap.sh પર આખો કમ્યુનિટી રોડમેપ",
+  "auth.link_tip_title": "કોડને બદલે લિંક આવી?",
+  "auth.link_tip": "આ જ ફોન પર ઇમેલની લિંક દબાવો, તમે લૉગ ઇન થઈ જશો.",
+  "auth.signing_in": "લૉગ ઇન થઈ રહ્યું છે…",
+  "auth.link_failed": "એ લિંક કામ ન કરી",
+  "auth.try_again": "ફરી લૉગ ઇન કરો",
+  "err.link": "લિંક એક જ વાર અને એક કલાક ચાલે છે. નવી લિંક માગો."
 }
