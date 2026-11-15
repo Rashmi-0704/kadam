@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { q, one, J, type Row } from "./db";
 import { matchProblems, heuristicMatch, skillGaps, type Match, type Pathways, type Gap } from "./ai/services";
 import type { T } from "./i18n/config";
-import { SEEDED_ROADMAPS } from "@/db/roadmaps-data";
+import { SEEDED_ROADMAPS, flattenTopics } from "@/db/roadmaps-data";
 
 const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 16);
 const NEW_DAYS = 3;
@@ -65,7 +65,7 @@ export async function gapsFor(userId: string, profile: Row, problem: Row): Promi
   return gaps.map((g) => {
     const s = g.skill.toLowerCase();
     for (const r of SEEDED_ROADMAPS) {
-      const step = r.steps.find((st) => st.skills.some((k) => s.includes(k) || k.includes(s)) || st.title.toLowerCase().includes(s));
+      const step = flattenTopics(r.sections).find((st) => st.skills.some((k) => s.includes(k) || k.includes(s)) || st.title.toLowerCase().includes(s));
       if (step) return { ...g, href: `/student/roadmaps/${r.role}#${step.id}` };
     }
     return { ...g, href: roles[0] ? `/student/roadmaps/${roles[0]}` : "/student/roadmaps" };

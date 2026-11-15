@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { env, hasSupabaseStorage } from "./env";
 import { adminClient } from "./supabase";
-import { SCHEMA_SQL } from "@/db/schema";
+import { SCHEMA_SQL, UPGRADE_SQL } from "@/db/schema";
 import { seed, RESET_SQL } from "@/db/seed-data";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -30,6 +30,7 @@ async function init(): Promise<Db> {
       await ensureSupabaseBuckets();
       await seed(q, putSupabaseBlob);
     }
+    await exec(UPGRADE_SQL);
     return { q, exec, kind: "postgres" };
   }
   // Local / fallback database: embedded Postgres (PGlite).
@@ -43,6 +44,7 @@ async function init(): Promise<Db> {
     await db.exec(SCHEMA_SQL);
     await seed(q, putBlob(q));
   }
+  await db.exec(UPGRADE_SQL);
   return { q, exec: async (s) => void (await db.exec(s)), kind: "pglite" };
 }
 

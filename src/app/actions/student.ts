@@ -223,20 +223,24 @@ export async function takeUpProblem(_: FormState, form: FormData): Promise<FormS
 
 /* ---------------- S3: roadmap progress ---------------- */
 
-export async function toggleRoadmapStep(role: string, stepId: string, done: boolean) {
+export async function setTopicStatus(role: string, topicId: string, status: "done" | "learning" | "skipped" | null) {
   const { user } = await requireStudent();
-  const row = await one(`select completed_step_ids from roadmap_progress where student_id = $1 and role = $2`, [user.id, role]);
-  const set = new Set<string>(row?.completed_step_ids ?? []);
-  if (done) set.add(stepId);
-  else set.delete(stepId);
+  if (!/^[a-z0-9-]{1,80}$/.test(role) || !/^[a-z0-9-]{1,80}$/.test(topicId)) return {};
+  if (status !== null && !["done", "learning", "skipped"].includes(status)) return {};
+  const row = await one(`select statuses, completed_step_ids from roadmap_progress where student_id = $1 and role = $2`, [user.id, role]);
+  const st: Record<string, string> = { ...(row?.statuses ?? {}) };
+  for (const id of (row?.completed_step_ids ?? []) as string[]) if (!st[id]) st[id] = "done";
+  if (status) st[topicId] = status;
+  else delete st[topicId];
+  const done = Object.entries(st).filter(([, v]) => v === "done").map(([k]) => k);
   await q(
-    `insert into roadmap_progress (student_id, role, completed_step_ids) values ($1,$2,$3::jsonb)
-     on conflict (student_id, role) do update set completed_step_ids = excluded.completed_step_ids`,
-    [user.id, role, J([...set])],
+    `insert into roadmap_progress (student_id, role, completed_step_ids, statuses) values ($1,$2,$3::jsonb,$4::jsonb)
+     on conflict (student_id, role) do update set completed_step_ids = excluded.completed_step_ids, statuses = excluded.statuses`,
+    [user.id, role, J(done), J(st)],
   );
-  revalidatePath(`/student/roadmaps/${role}`);
   revalidatePath("/student/roadmaps");
-  return [...set];
+  revalidatePath("/student/dashboard");
+  return st;
 }
 
 export async function addTargetRole(form: FormData) {

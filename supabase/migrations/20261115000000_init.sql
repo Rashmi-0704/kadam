@@ -156,6 +156,7 @@ create table if not exists roadmap_progress (
   student_id uuid not null references users(id) on delete cascade,
   role text not null,
   completed_step_ids jsonb not null default '[]'::jsonb,
+  statuses jsonb not null default '{}'::jsonb,
   primary key (student_id, role)
 );
 

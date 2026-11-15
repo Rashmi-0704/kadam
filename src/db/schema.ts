@@ -1,6 +1,11 @@
 // Canonical schema. `node scripts/db.ts write-migration` copies this into supabase/migrations.
 // All access goes through the server (direct Postgres connection), so RLS is enabled
 // with no policies: the anon/public API keys can read nothing.
+// Small upgrades for databases created before a column existed. Safe to run on every start.
+export const UPGRADE_SQL = `
+alter table roadmap_progress add column if not exists statuses jsonb not null default '{}'::jsonb;
+`;
+
 export const SCHEMA_SQL = `
 
 
@@ -161,6 +166,7 @@ create table if not exists roadmap_progress (
   student_id uuid not null references users(id) on delete cascade,
   role text not null,
   completed_step_ids jsonb not null default '[]'::jsonb,
+  statuses jsonb not null default '{}'::jsonb,
   primary key (student_id, role)
 );
 

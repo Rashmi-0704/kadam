@@ -4,6 +4,7 @@ import { q } from "@/lib/db";
 import { getT, getLang } from "@/lib/i18n/server";
 import { EmptyState, PageTitle, Section, StatusBadge, fmtDate } from "@/components/ui";
 import { roleTitle } from "@/db/taxonomy";
+import { progressOf } from "@/lib/roadmaps";
 
 export const metadata = { title: "Dashboard" };
 
@@ -20,7 +21,7 @@ export default async function StudentDashboard() {
       where e.student_id = $1 order by (e.status = 'withdrawn'), e.started_at desc`,
     [user.id],
   );
-  const progress = await q(`select r.role, r.title, r.steps, coalesce(rp.completed_step_ids, '[]'::jsonb) as done
+  const progress = await q(`select r.role, r.title, r.steps, rp.statuses
        from roadmap_progress rp join roadmaps r on r.role = rp.role where rp.student_id = $1`, [user.id]);
   const reports = engagements.filter((e) => e.report_version);
   const firstName = user.name?.split(" ")[0] ?? "";
@@ -97,9 +98,10 @@ export default async function StudentDashboard() {
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {progress.map((r) => {
-              const total = (r.steps as unknown[]).length;
-              const done = (r.done as string[]).length;
-              const pct = total ? Math.round((done / total) * 100) : 0;
+              const pr = progressOf(r.steps, r.statuses);
+              const total = pr.total;
+              const done = pr.done + pr.skipped;
+              const pct = pr.pct;
               return (
                 <li key={r.role}>
                   <Link href={`/student/roadmaps/${r.role}`} className="card block p-4 hover:border-ink-3">

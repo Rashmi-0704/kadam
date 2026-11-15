@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { geminiJson, geminiCanRead, toBase64, type Part } from "./gemini";
 import { ROLES, roleTitle, slugify, SECTORS, PROBLEM_TYPES, DIFFICULTIES, TIME_NEEDED, WORK_MODES, type Categories } from "@/db/taxonomy";
-import type { RoadmapStep } from "@/db/roadmaps-data";
+import type { Section, Topic, Resource } from "@/db/roadmaps-data";
 
 const LANG_NAME: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada", ta: "Tamil", or: "Odia", bn: "Bengali", gu: "Gujarati" };
 const STYLE = "Use short, plain sentences. Never call Kadam an internship platform or job board. Never describe business owners as uneducated.";
@@ -163,42 +163,77 @@ export async function buildPathways(input: { cv: ParsedCv | null; summary: Intak
 }
 
 /* ============================== AI-2a  Roadmap generator ============================== */
-const StepSchema = z.object({
+const ResSchema = z.object({ title: z.string(), url: z.string(), type: z.enum(["article", "video", "course", "docs", "tool"]).catch("article") });
+const SubSchema = z.object({ title: z.string(), description: z.string(), optional: z.boolean().default(false) });
+const TopicSchema = z.object({
   title: z.string(),
   description: z.string(),
   skills: z.array(z.string()).default([]),
-  resources: z.array(z.object({ title: z.string(), url: z.string() })).default([]),
+  resources: z.array(ResSchema).default([]),
+  optional: z.boolean().default(false),
+  subtopics: z.array(SubSchema).default([]),
 });
-const RoadmapGen = z.object({ summary: z.string(), steps: z.array(StepSchema).min(3).max(10) });
+const RoadmapGen = z.object({ summary: z.string(), sections: z.array(z.object({ title: z.string(), topics: z.array(TopicSchema).min(1).max(6) })).min(2).max(4) });
 
-export async function generateRoadmap(role: string): Promise<{ title: string; summary: string; steps: RoadmapStep[]; source: string }> {
+export async function generateRoadmap(role: string): Promise<{ title: string; summary: string; sections: Section[]; source: string }> {
   const title = roleTitle(role);
+  const res = obj({ title: str, url: str, type: { type: "string", enum: ["article", "video", "course", "docs", "tool"] } });
   const ai = await geminiJson({
-    system: `You write roadmap.sh-style learning roadmaps for Indian college students. 5 to 8 ordered steps. Each step: a short title, one-sentence description, skill keywords, and 1-2 free, well-known resources with real URLs. ${STYLE}`,
+    system:
+      `You write roadmap.sh-style skill roadmaps for Indian college students. Return 3 sections in learning order. Each section has 2-4 topics; ` +
+      `each topic has a one-to-two sentence explainer, skill keywords, 1-3 free, well-known resources with real URLs and a type, ` +
+      `an 'optional' flag for nice-to-have topics, and 0-4 subtopics (title, one-sentence description, optional flag). ` +
+      `End the last section with a topic about solving a real problem for a small business on Kadam. ${STYLE}`,
     parts: [{ text: `Role: ${title}` }],
     zod: RoadmapGen,
     jsonSchema: obj({
       summary: str,
-      steps: { type: "array", items: obj({ title: str, description: str, skills: strArr, resources: { type: "array", items: obj({ title: str, url: str }) } }) },
+      sections: {
+        type: "array",
+        items: obj({
+          title: str,
+          topics: { type: "array", items: obj({ title: str, description: str, skills: strArr, resources: { type: "array", items: res }, optional: { type: "boolean" }, subtopics: { type: "array", items: obj({ title: str, description: str, optional: { type: "boolean" } }) } }) },
+        }),
+      },
     }),
   });
-  const prefix = role.slice(0, 3);
-  const mk = (list: z.infer<typeof StepSchema>[]): RoadmapStep[] =>
-    list.map((s, i) => ({ ...s, resources: s.resources.filter((r) => /^https?:\/\//.test(r.url)), id: `${prefix}-${i + 1}`, order: i + 1, prerequisites: i ? [`${prefix}-${i}`] : [] }));
-  if (ai) return { title, summary: ai.summary, steps: mk(ai.steps), source: "ai" };
-  const q = encodeURIComponent(title);
+  const prefix = role.slice(0, 12);
+  const toTopic = (tp: z.infer<typeof TopicSchema>, si: number, ti: number): Topic => {
+    const id = `${prefix}-${si + 1}-${ti + 1}`;
+    return {
+      id,
+      title: tp.title,
+      description: tp.description,
+      skills: tp.skills,
+      resources: tp.resources.filter((r) => /^https:\/\//.test(r.url)).slice(0, 4),
+      ...(tp.optional ? { optional: true } : {}),
+      children: tp.subtopics.map((c, ci) => ({ id: `${id}-${ci + 1}`, title: c.title, description: c.description, skills: [], resources: [], ...(c.optional ? { optional: true } : {}) })),
+    };
+  };
+  if (ai) return { title, summary: ai.summary, sections: ai.sections.map((sec, si) => ({ title: sec.title, topics: sec.topics.map((tp, ti) => toTopic(tp, si, ti)) })), source: "ai" };
+  const v = (q: string): Resource => ({ title: `Video lessons: ${q}`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, type: "video" });
   return {
     title,
     summary: `A step-by-step path into ${title} work.`,
     source: "template",
-    steps: mk([
-      { title: `What a ${title} does`, description: "Read job descriptions and talk to one person in the role.", skills: [], resources: [{ title: "Search roles on roadmap.sh", url: "https://roadmap.sh/" }] },
-      { title: "Core concepts", description: "Learn the basic ideas and words used in this field.", skills: [], resources: [{ title: "Free courses on Khan Academy", url: "https://www.khanacademy.org/" }] },
-      { title: "Main tools", description: "Learn the two or three tools people in this role use every day.", skills: [], resources: [{ title: `YouTube: ${title} tools`, url: `https://www.youtube.com/results?search_query=${q}+tools+beginner` }] },
-      { title: "Practice project", description: "Do a small project on your own from start to finish.", skills: [], resources: [] },
-      { title: "Solve a real problem", description: "Take up a Kadam problem in this area and deliver it.", skills: [], resources: [] },
-      { title: "Show your impact", description: "Share your impact report and resume bullets.", skills: [], resources: [] },
-    ]),
+    sections: [
+      { title: "Understand the role", topics: [
+        { id: `${prefix}-1-1`, title: `What a ${title} does`, description: "Read three job descriptions and talk to one person who does this work.", skills: [], resources: [v(`what does a ${title} do`)],
+          children: [
+            { id: `${prefix}-1-1-1`, title: "Daily tasks", description: "List what they spend most of their week on.", skills: [], resources: [] },
+            { id: `${prefix}-1-1-2`, title: "Common tools", description: "Note the tools that appear in every job post.", skills: [], resources: [] },
+          ] },
+        { id: `${prefix}-1-2`, title: "Core concepts", description: "Learn the basic ideas and words used in this field.", skills: [], resources: [{ title: "Free courses on Khan Academy", url: "https://www.khanacademy.org/", type: "course" }] },
+      ] },
+      { title: "Build skills", topics: [
+        { id: `${prefix}-2-1`, title: "Main tools", description: "Get comfortable with the two or three tools people in this role use every day.", skills: [], resources: [v(`${title} tools for beginners`)] },
+        { id: `${prefix}-2-2`, title: "Practice project", description: "Do one small project on your own from start to finish.", skills: [], resources: [] },
+      ] },
+      { title: "Prove it", topics: [
+        { id: `${prefix}-3-1`, title: "Solve a real problem", description: "Take up a Kadam problem in this area and deliver it.", skills: [], resources: [] },
+        { id: `${prefix}-3-2`, title: "Show your impact", description: "Share your impact report and resume bullets.", skills: [], resources: [] },
+      ] },
+    ],
   };
 }
 

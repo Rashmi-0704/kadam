@@ -361,10 +361,16 @@ export async function seed(q: Q, put: Put) {
 
   // ---------- roadmaps ----------
   for (const r of SEEDED_ROADMAPS) {
-    await q(`insert into roadmaps (role, title, summary, steps, source) values ($1,$2,$3,$4::jsonb,'seed')`, [r.role, r.title, r.summary, J(r.steps)]);
+    await q(`insert into roadmaps (role, title, summary, steps, source) values ($1,$2,$3,$4::jsonb,'seed')`, [r.role, r.title, r.summary, J({ sections: r.sections })]);
   }
-  await q(`insert into roadmap_progress (student_id, role, completed_step_ids) values ($1,'digital-marketer',$2::jsonb)`, [IDS.rohan, J(["dm-1", "dm-2", "dm-3"])]);
-  await q(`insert into roadmap_progress (student_id, role, completed_step_ids) values ($1,'business-analyst',$2::jsonb)`, [IDS.rohan, J(["ba-1"])]);
+  const prog: [string, Record<string, string>][] = [
+    ["digital-marketer", { "dm-basics": "done", "dm-basics-customer": "done", "dm-basics-offer": "done", "dm-basics-funnel": "done", "dm-local": "done", "dm-local-wa": "done", "dm-local-gbp": "learning", "dm-social": "done", "dm-social-calendar": "done", "dm-social-reels": "learning", "dm-seo": "learning", "dm-ads": "skipped" }],
+    ["business-analyst", { "ba-money": "done", "ba-stake": "learning", "ba-stake-interview": "done" }],
+  ];
+  for (const [role, st] of prog) {
+    const done = Object.entries(st).filter(([, v]) => v === "done").map(([k]) => k);
+    await q(`insert into roadmap_progress (student_id, role, completed_step_ids, statuses) values ($1,$2,$3::jsonb,$4::jsonb)`, [IDS.rohan, role, J(done), J(st)]);
+  }
 
   // ---------- notifications ----------
   const notes: [string, string, Record<string, unknown>, number, boolean][] = [
