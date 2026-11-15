@@ -21,12 +21,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="mx-auto max-w-xl">
         <PageTitle title={t("settings.title")} />
         {sp.saved && <Notice kind="success" className="mb-6">{t("settings.saved")}</Notice>}
-        <Section title={t("settings.language")}>
+        {user.role === "business" && <Section title={t("settings.language")}>
           <div className="card flex items-center justify-between gap-3 p-4">
             <p className="text-sm text-ink-2">{t("settings.language_help")}</p>
             <LanguageToggle />
           </div>
-        </Section>
+        </Section>}
         <Section title={t("settings.account")}>
           <dl className="card divide-y divide-line">
             <div className="flex justify-between gap-3 p-4"><dt className="text-ink-3">{t("settings.name")}</dt><dd className="font-semibold">{user.name}</dd></div>

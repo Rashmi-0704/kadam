@@ -36,7 +36,7 @@ export async function AppShell({ user, children }: { user: User; children: React
             <NavLinks items={items} variant="top" />
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <LanguageToggle compact />
+            {user.role === "business" && <LanguageToggle compact />}
             <Link href="/notifications" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card" aria-label={t("nav.notifications", { n: unread })}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
               {unread > 0 && <span className="absolute -top-1 -right-1 min-w-5 rounded-full bg-saffron px-1 text-center text-[11px] leading-5 font-bold text-ink">{unread > 9 ? "9+" : unread}</span>}
