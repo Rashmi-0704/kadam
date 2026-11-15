@@ -21,7 +21,14 @@ async function init(): Promise<Db> {
     const local = /^(localhost|127\.0\.0\.1)$/.test(url.hostname);
     url.search = "";
     const sql = postgres(url.toString(), { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15, ssl: local ? false : "require", onnotice: () => {} });
-    const q: Query = async (t, p = []) => Array.from(await sql.unsafe(t, p as any[])) as Row[];
+    // postgres.js JSON-encodes values bound to jsonb, so a pre-stringified value would be stored as a JSON string.
+    // Parse the parameters that the SQL casts to jsonb, so they are stored as real JSON.
+    const jsonParams = (t: string) => new Set(Array.from(t.matchAll(/\$(\d+)::jsonb/g), (m) => Number(m[1]) - 1));
+    const q: Query = async (t, p = []) => {
+      const idx = jsonParams(t);
+      const params = idx.size ? p.map((v, i) => (idx.has(i) && typeof v === "string" ? JSON.parse(v) : v)) : p;
+      return Array.from(await sql.unsafe(t, params as any[])) as Row[];
+    };
     const exec = async (s: string) => void (await sql.unsafe(s));
     // First connection to an empty database: create the schema, storage buckets and demo data.
     const exists = await q(`select to_regclass('public.users') as t`);
