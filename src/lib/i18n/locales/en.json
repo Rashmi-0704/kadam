@@ -81,6 +81,7 @@
   "auth.email": "Email",
   "auth.email_hint": "Students: use your college email to get verified straight away.",
   "auth.send_code": "Send code",
+  "auth.try_demo": "Use the demo accounts instead",
   "auth.sending": "Sending…",
   "auth.code_title": "Check your email",
   "auth.code_sent": "We sent an email to {email}.",

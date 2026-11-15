@@ -50,7 +50,7 @@ function RoleBadge({ role, onChange }: { role: Role; onChange: () => void }) {
   );
 }
 
-export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | "role"; defaultRole?: Role }) {
+export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialStep: "email" | "role"; defaultRole?: Role; demo?: boolean }) {
   const t = useT();
   const [sendState, sendAction] = useActionState<AuthState, FormData>(sendOtp, {});
   const [verifyState, verifyAction] = useActionState<AuthState, FormData>(verifyOtp, {});
@@ -133,6 +133,9 @@ export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | 
         {role === "student" && <p className="mt-2 text-xs text-ink-3">{t("auth.email_hint")}</p>}
       </div>
       {sendState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(sendState.error)}</p>}
+      {demo && (sendState.error === "err.otp_rate" || sendState.error === "err.otp_send") && (
+        <a href="/demo" className="btn-secondary w-full">{t("auth.try_demo")}</a>
+      )}
       <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.sending")}>{t("auth.send_code")}</SubmitButton>
     </form>
   );

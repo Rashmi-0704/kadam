@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { AuthFlow } from "./AuthFlow";
 import { getT, isStudentContext } from "@/lib/i18n/server";
+import { env } from "@/lib/env";
 
 export const metadata = { title: "Sign in" };
 
@@ -22,7 +23,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
       </header>
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-16">
         <div className="card p-6 sm:p-8">
-          <AuthFlow initialStep={u && !u.role ? "role" : "email"} defaultRole={sp.as === "business" ? "business" : sp.as === "student" ? "student" : undefined} />
+          <AuthFlow initialStep={u && !u.role ? "role" : "email"} defaultRole={sp.as === "business" ? "business" : sp.as === "student" ? "student" : undefined} demo={env.demoMode} />
         </div>
         <p className="mt-6 text-center text-sm text-ink-3">{t("auth.footer")}</p>
       </main>

@@ -81,6 +81,7 @@
   "auth.email": "ઇમેલ",
   "auth.email_hint": "વિદ્યાર્થીઓ: કોલેજનો ઇમેલ વાપરો તો તરત વેરિફાય થઈ જશો.",
   "auth.send_code": "કોડ મોકલો",
+  "auth.try_demo": "તેના બદલે ડેમો એકાઉન્ટ વાપરો",
   "auth.sending": "મોકલાય છે…",
   "auth.code_title": "તમારો ઇમેલ જુઓ",
   "auth.code_sent": "{email} પર ઇમેલ મોકલ્યો છે.",
