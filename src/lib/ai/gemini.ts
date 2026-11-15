@@ -21,6 +21,8 @@ export async function geminiJson<T>(opts: {
   temperature?: number;
 }): Promise<T | null> {
   if (!env.geminiKey) return null;
+  const label = opts.system.slice(0, 40).replace(/\s+/g, " ");
+  const t0 = Date.now();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(env.geminiModel)}:generateContent`;
   const body = (withSchema: boolean) => ({
     systemInstruction: { parts: [{ text: opts.system }] },
@@ -29,7 +31,7 @@ export async function geminiJson<T>(opts: {
       responseMimeType: "application/json",
       ...(withSchema ? { responseJsonSchema: opts.jsonSchema } : {}),
       temperature: opts.temperature ?? 0.4,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 8192,
     },
   });
   for (const withSchema of [true, false]) {
@@ -41,20 +43,33 @@ export async function geminiJson<T>(opts: {
         signal: AbortSignal.timeout(30000),
         cache: "no-store",
       });
-      if (res.status === 400 && withSchema) continue; // retry without a structured schema
+      if (res.status === 400 && withSchema) {
+        console.warn(`[gemini] schema rejected, retrying without it · ${label}`);
+        continue;
+      }
       if (!res.ok) {
-        console.warn(`[gemini] ${res.status}`);
+        console.warn(`[gemini] HTTP ${res.status} · ${label}`);
         return null;
       }
       const data = await res.json();
-      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("");
-      if (!text) return null;
+      // Skip any "thought" parts some models return; only the answer is JSON.
+      const text: string | undefined = data?.candidates?.[0]?.content?.parts
+        ?.filter((p: { thought?: boolean }) => !p.thought)
+        .map((p: { text?: string }) => p.text ?? "")
+        .join("");
+      if (!text) {
+        console.warn(`[gemini] empty answer (${data?.candidates?.[0]?.finishReason ?? "?"}) · ${label}`);
+        return null;
+      }
       const parsed = opts.zod.safeParse(JSON.parse(stripFences(text)));
-      if (parsed.success) return parsed.data;
-      console.warn("[gemini] schema mismatch");
+      if (parsed.success) {
+        console.log(`[gemini] ok ${Date.now() - t0}ms · ${label}`);
+        return parsed.data;
+      }
+      console.warn(`[gemini] schema mismatch: ${parsed.error.issues.slice(0, 2).map((i) => i.path.join(".") + " " + i.message).join("; ")} · ${label}`);
       if (!withSchema) return null;
     } catch (e) {
-      console.warn("[gemini] call failed", (e as Error).name);
+      console.warn(`[gemini] call failed ${(e as Error).name} · ${label}`);
       return null;
     }
   }
