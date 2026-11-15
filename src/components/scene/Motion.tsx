@@ -22,6 +22,9 @@ export function Reveal({ children, className = "", stagger = 0.12, y = 40 }: { c
           once: true,
           onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger }),
         });
+        // Content must never stay hidden: anything not revealed within 4 s (or if scrolling is unusual) is shown.
+        const safety = window.setTimeout(() => gsap.set(items, { opacity: 1, y: 0 }), 4000);
+        return () => window.clearTimeout(safety);
       });
     },
     { scope: ref },
@@ -37,6 +40,8 @@ export function SplitHeading({ text, accent, className = "", as: Tag = "h1", del
       const mm = gsap.matchMedia();
       mm.add(motionOk, () => {
         gsap.from(".sw", { yPercent: 110, opacity: 0, rotate: 4, duration: 0.9, ease: "power4.out", stagger: 0.06, delay });
+        const safety = window.setTimeout(() => gsap.set(".sw", { clearProps: "all" }), 2500);
+        return () => window.clearTimeout(safety);
       });
     },
     { scope: ref },

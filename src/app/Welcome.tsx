@@ -56,8 +56,11 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".w-fade", { opacity: 0, y: 16, duration: 0.7, ease: "power3.out", stagger: 0.1, delay: 0.2 });
-        gsap.from(".door", { opacity: 0, y: 40, scale: 0.95, duration: 0.8, ease: "back.out(1.5)", stagger: 0.12, delay: 0.45 });
+        // The two cards are the whole point of this screen: they are visible from the first frame and only slide in slightly.
+        gsap.from(".door", { y: 24, duration: 0.7, ease: "power3.out", stagger: 0.1, clearProps: "transform" });
+        gsap.from(".w-fade", { opacity: 0, y: 12, duration: 0.6, ease: "power3.out", stagger: 0.08 });
+        const safety = window.setTimeout(() => gsap.set(".w-fade, .door", { clearProps: "all" }), 1500);
+        return () => window.clearTimeout(safety);
       });
     },
     { scope: ref },

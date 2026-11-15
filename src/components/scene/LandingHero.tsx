@@ -48,6 +48,9 @@ export function LandingHero({
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.from(".h-fade", { opacity: 0, y: 24, duration: 0.8, ease: "power3.out", stagger: 0.12, delay: 0.6 });
         gsap.from(".h-card", { opacity: 0, y: 60, rotate: 4, duration: 1.1, ease: "power4.out", delay: 1 });
+        // Never leave hero text hidden if animations can't run.
+        const safety = window.setTimeout(() => gsap.set(".h-fade, .h-card, .sw", { clearProps: "all" }), 2500);
+        return () => window.clearTimeout(safety);
       });
     },
     { scope: ref },
