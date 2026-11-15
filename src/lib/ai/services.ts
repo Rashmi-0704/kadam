@@ -88,6 +88,7 @@ export async function intakeNext(input: {
     system:
       `You are Kadam's career intake guide for Indian college students from every stream. Ask ONE short, friendly question at a time to fill gaps in the CV ` +
       `and learn the student's interests, intent, where they are now and where they want to go. Students may paste job links or name target roles. ` +
+      `Never repeat or rephrase a question you already asked; if the student skipped one, move on to a different gap. ` +
       `After 4 to 6 student answers, or when you have enough, set done=true and give a summary. Write in simple English. ${STYLE}`,
     parts: [
       { text: `Parsed CV: ${JSON.stringify(input.cv ?? {})}` },
@@ -127,7 +128,7 @@ export async function buildPathways(input: { cv: ParsedCv | null; summary: Intak
   const ai = await geminiJson({
     system:
       `You build a career pathway profile for an Indian college student. Return 2 'now' roles they fit today, 2 'pivot' adjacent roles they could move into, ` +
-      `and 1-2 'stretch' aspirational roles. Each rationale is one short sentence that points to evidence from the student. ` +
+      `and 1-2 'stretch' aspirational roles. Each rationale is one short sentence that points to evidence from the student, written to the student as "you" (e.g. "Your fest sales analysis in pandas shows..."). ` +
       `Prefer these role slugs when they fit: ${ROLE_LIST}. If none fit, make a new short slug. ${STYLE}`,
     parts: [{ text: `CV: ${JSON.stringify(input.cv ?? {})}\nIntake summary: ${JSON.stringify(input.summary ?? {})}\nChat: ${JSON.stringify(input.transcript).slice(0, 6000)}` }],
     zod: PathwaysSchema,
@@ -464,6 +465,7 @@ export async function impactReport(input: ReportInput): Promise<Report> {
     system:
       `Write an impact report for a college student's real-world project with an Indian small business or NGO. Be factual: use only the evidence given, ` +
       `never invent numbers. summary: 2-3 sentences. outcomes: measurable results as label/value pairs (use the business's numbers). ` +
+      `skills_demonstrated: 3-6 skills the student actually used, judged from the submission and results (not the problem's wish list). ` +
       `timeline: dated events (YYYY-MM-DD). resume_bullets: 3-4 strong bullets starting with a verb, with numbers where available. ${STYLE}`,
     parts: [{ text: JSON.stringify(input) }],
     zod: ReportSchema,
