@@ -143,15 +143,15 @@ export async function seed(q: Q, put: Put) {
   const probs: Prob[] = [
     {
       n: 1, biz: IDS.sharma, daysAgo: 12,
-      title: "Track credit (udhaar) given to regular customers",
+      title: "Know which items to restock before they run out",
       background: "A family kirana store in Bhubaneswar serving about 150 households, open 7am to 10pm.",
-      current: "Credit given to regular customers is written in a paper notebook. At month end the owner adds it up by hand.",
-      problem: "Entries get missed or smudged, customers dispute amounts, and about ₹8,000–10,000 a month is hard to recover.",
-      outcome: "A simple way to record credit on a phone in under 10 seconds per entry, and send a polite monthly reminder on WhatsApp.",
+      current: "The owner checks shelves by eye each evening and orders from two wholesalers by phone.",
+      problem: "Fast-moving items like atta, oil and milk packets run out two or three times a month, and slow items sit for weeks.",
+      outcome: "A simple weekly restock list the owner can follow on a phone, based on what actually sells.",
       constraints: "Must work on a basic Android phone. Owner prefers Hindi or Odia. No monthly fees.",
-      timeline: "2–3 weeks", resources: "Photos of the last three months of the credit notebook. Owner available on WhatsApp after 2pm.",
-      cat: { sector: "retail", problem_type: "tech_build", skills: ["Google Sheets", "App design", "WhatsApp"], difficulty: "beginner", time_needed: "w1_4", work_mode: "hybrid", city: "Bhubaneswar", related_roles: ["software-developer", "data-analyst", "ux-designer"] },
-      raw: { type: "voice", transcript: "हमारी दुकान में उधार का हिसाब कॉपी में लिखते हैं, बहुत बार गड़बड़ हो जाती है।" },
+      timeline: "3 weeks", resources: "Purchase bills for the last two months and a photo of the shelf layout.",
+      cat: { sector: "retail", problem_type: "operations", skills: ["Google Sheets", "Inventory planning", "Data analysis"], difficulty: "beginner", time_needed: "w1_4", work_mode: "hybrid", city: "Bhubaneswar", related_roles: ["operations-analyst", "data-analyst"] },
+      raw: { type: "voice", transcript: "दुकान में आटा, तेल और दूध के पैकेट बार-बार खत्म हो जाते हैं, और कुछ सामान हफ्तों पड़ा रहता है।" },
     },
     {
       n: 2, biz: IDS.annapurna, daysAgo: 70,

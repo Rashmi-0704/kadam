@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import fs from "node:fs";
 import { env } from "./env";
 import { SCHEMA_SQL } from "@/db/schema";
 import { seed, RESET_SQL } from "@/db/seed-data";
@@ -21,6 +22,7 @@ async function init(): Promise<Db> {
   // Local / fallback database: embedded Postgres (PGlite).
   const { PGlite } = await import("@electric-sql/pglite");
   const dir = process.env.VERCEL ? "/tmp/kadam-pg" : path.join(process.cwd(), ".data", "pg");
+  fs.mkdirSync(dir, { recursive: true });
   const db = await PGlite.create(dir);
   const q: Query = async (t, p = []) => (await db.query(t, p as any[])).rows as Row[];
   const exists = await q(`select to_regclass('public.users') as t`);
