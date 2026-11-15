@@ -713,5 +713,8 @@
   "auth.link_spam": "Not there in a minute? Check Spam or Promotions.",
   "auth.have_code": "Have a 6-digit code instead?",
   "verify.link_tap": "Open that email on this phone and tap the link inside to get verified.",
-  "verify.checking": "Verifying your college email…"
+  "verify.checking": "Verifying your college email…",
+  "welcome.who_sub": "Choose one to begin.",
+  "welcome.go_student": "Continue as student",
+  "welcome.go_business": "Continue as business"
 }
