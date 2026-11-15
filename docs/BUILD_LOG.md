@@ -16,7 +16,7 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 | Database until then | Partial (fallback) | With no `POSTGRES_URL`/`DATABASE_URL`, the app runs on an embedded Postgres (PGlite) with the same schema and seed. Locally it persists in `.data/` and the whole demo path works. **On Vercel it is per-instance and temporary**: seeded pages read fine, but a multi-step write (e.g. creating a problem, then answering follow-ups) can land on a different instance and lose the draft. Verified on 15 Nov: the Hindi problem draft disappeared mid-intake. The deployed demo path needs Supabase connected. |
 | Supabase auto-setup | Done | On first connection to an empty Postgres, the app creates the schema, the five private storage buckets and the demo data by itself. The SQL is also in `supabase/migrations/20261115000000_init.sql`. |
 | Email OTP | Built, not live | Uses Supabase Auth (`signInWithOtp` + `verifyOtp` type `email`). Without Supabase the sign-in page shows a friendly "couldn't send a code" message; everyone can still sign in through `/demo`. |
-| Gemini key | Missing | Not in the environment. Every AI feature falls back to saved seed outputs or rule-based answers, so the demo works without it. |
+| Gemini key | **Done** (15 Nov) | Added to `.env.local` and Vercel (production, preview, development). Model `gemini-3.5-flash-lite`: tested with structured JSON (~0.5–4 s per call). Rule-based answers remain as the fallback if a call fails. |
 | Sarvam key | Missing | Voice input falls back to the browser's own speech recognition (Chrome, Edge, Android Chrome) when the key is missing. |
 | Impeccable skill | Not installed | Designed by hand instead. |
 
@@ -74,6 +74,12 @@ Sharma Kirana types the problem in Hindi → 6 Hindi follow-ups → review (time
 
 ## Real-account walk (15 Nov, live, no /demo)
 New student (non-college email) → email link → role kept → name + consent → college details → college-email verification by link → verified. New business → email link → name + consent → business details → dashboard → posts "pickles online" problem → 6 follow-ups → categorised Marketing & growth → live. Real student takes it up (relevant roadmaps: Digital Marketer, Financial Analyst, Social Media Manager, Excel) → chat → submit → business dashboard shows "Priya Nayak sent a solution" → receipt → In use → impact update → public report v3 with resume bullets. All QA accounts deleted afterwards.
+43. **Gemini live.** Each call logs `[gemini] ok|failed · <feature>` so live logs show whether a screen got a real AI answer (fallbacks are otherwise silent). "Thought" parts are skipped; output limit raised to 8,192 tokens so long roadmaps aren't cut off.
+44. **CV reading made fast**: sending the PDF file took ~30 s; when text can be extracted locally it is sent as text instead (file only for photos/scans). AI pages get `maxDuration = 60`.
+45. **Prompt fixes from live testing**: the intake guide must not repeat a question; pathway reasons address the student as "you"; report skills come from what the student actually did, not the problem's wish list.
+
+## Live AI walk (15 Nov, after adding the key)
+Hindi kirana problem → Gemini asked 4 relevant Hindi follow-ups (current method, desired outcome, phone/budget/timeline, data to share) → drafted an English statement "Build a Simple Digital Khata App for Kirana Store" (tech build; Software Developer, Frontend Developer, Business Analyst). Ananya's CV read accurately → adaptive intake → pathways with evidence (fest sales analysis, canteen app, newsletter) → the new problem ranked #1 in Suggested with an AI reason → AI skill gaps (Android, quick-entry UI, Hindi/Odia, storage) → take up → submit → In use → AI impact report v3 (summary, 4 measurable outcomes, 4 resume bullets). AI roadmap for DevOps Engineer: 3 sections, 16 topics, real resources. All Gemini calls in the window succeeded. Accounts reset afterwards.
 
 ## Conflicts resolved
 1. **Connectors**: the prompt said Supabase and Vercel connectors were available; neither was attached to this session. Used the Vercel CLI (logged in) for Vercel, and built a self-bootstrapping Supabase path plus an embedded-Postgres fallback for the database.
