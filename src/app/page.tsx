@@ -11,6 +11,7 @@ export default async function WelcomePage() {
       home={u?.role ? homeFor(u.role) : null}
       text={{
         tagline: t("landing.tagline"),
+        home: t("nav.home"),
         who: t("auth.who_title"),
         whoSub: t("welcome.who_sub"),
         studentTitle: t("welcome.student"),

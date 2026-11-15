@@ -8,7 +8,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { LogoMark } from "@/components/Logo";
 
 type Text = Record<
-  "tagline" | "who" | "whoSub" | "studentTitle" | "studentSub" | "studentGo" | "businessTitle" | "businessSub" | "businessGo" | "login" | "open" | "note",
+  "tagline" | "home" | "who" | "whoSub" | "studentTitle" | "studentSub" | "studentGo" | "businessTitle" | "businessSub" | "businessGo" | "login" | "open" | "note",
   string
 >;
 
@@ -79,7 +79,7 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle compact />
-            <Link href={home ?? "/auth"} className="btn btn-sm whitespace-nowrap border border-white/30 text-paper hover:bg-white/10">{home ? text.open : text.login}</Link>
+            <Link href={home ?? "/auth"} className="btn btn-sm whitespace-nowrap border border-white/30 text-paper hover:bg-white/10">{home ? <><span className="sm:hidden">{text.home}</span><span className="hidden sm:inline">{text.open}</span></> : text.login}</Link>
           </div>
         </header>
 
