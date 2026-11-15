@@ -58,10 +58,18 @@ export function VerifyPanel() {
         sendState.step === "code" ? (
           <form action={verifyAction} className="space-y-3">
             <input type="hidden" name="college_email" value={sendState.email} />
-            <p className="text-sm text-ink-2">{t("auth.code_sent", { email: sendState.email ?? "" })}</p>
-            <input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required className="input text-center font-display text-2xl font-bold tracking-[0.4em]" placeholder="••••••" aria-label={t("auth.code_label")} />
-            {verifyState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(verifyState.error)}</p>}
-            <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.verify")}</SubmitButton>
+            <div className="rounded-2xl bg-saffron-soft p-4">
+              <p className="font-semibold">{t("auth.code_sent", { email: sendState.email ?? "" })}</p>
+              <p className="mt-1 text-sm">{t("verify.link_tap")}</p>
+            </div>
+            <details className="rounded-xl border border-line p-3" open={Boolean(verifyState.error)}>
+              <summary className="cursor-pointer text-sm font-semibold text-ink-2">{t("auth.have_code")}</summary>
+              <div className="mt-3 space-y-3">
+                <input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="input text-center font-display text-2xl font-bold tracking-[0.4em]" placeholder="••••••" aria-label={t("auth.code_label")} />
+                {verifyState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(verifyState.error)}</p>}
+                <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.verify")}</SubmitButton>
+              </div>
+            </details>
           </form>
         ) : (
           <form action={sendAction} className="space-y-3">

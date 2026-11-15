@@ -706,5 +706,12 @@
   "auth.signing_in": "Signing you in…",
   "auth.link_failed": "That link didn't work",
   "auth.try_again": "Sign in again",
-  "err.link": "Links work once and expire after an hour. Ask for a new one."
+  "err.link": "Links work once and expire after an hour. Ask for a new one.",
+  "auth.link_step1": "Open your email on this phone.",
+  "auth.link_step2": "Find the email from “Supabase Auth” we just sent.",
+  "auth.link_step3": "Tap the link inside. Kadam opens and you are signed in.",
+  "auth.link_spam": "Not there in a minute? Check Spam or Promotions.",
+  "auth.have_code": "Have a 6-digit code instead?",
+  "verify.link_tap": "Open that email on this phone and tap the link inside to get verified.",
+  "verify.checking": "Verifying your college email…"
 }

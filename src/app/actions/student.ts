@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { q, one, J } from "@/lib/db";
@@ -45,9 +46,26 @@ export async function sendCollegeOtp(_: FormState, form: FormData): Promise<Form
   if (!e.success) return { error: "err.email_invalid" };
   if (!isAcademicEmail(e.data)) return { error: "verify.not_academic", email: e.data };
   if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", email: e.data };
-  const { error } = await authClient().auth.signInWithOtp({ email: e.data, options: { shouldCreateUser: true } });
+  // The email's link comes back to /auth/college, which verifies the signed-in student (it does not sign them in as the college address).
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const { error } = await authClient().auth.signInWithOtp({ email: e.data, options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/college` } });
   if (error) return { error: error.status === 429 ? "err.otp_rate" : "err.otp_send", email: e.data };
   return { ok: true, step: "code", email: e.data };
+}
+
+/** College-email verification link: proves the student controls an academic address. */
+export async function finishCollegeLink(accessToken: string): Promise<{ ok: true } | { error: string }> {
+  const user = await requireUser("student");
+  if (!hasSupabaseAuth() || !accessToken) return { error: "err.link" };
+  const { data, error } = await authClient().auth.getUser(accessToken);
+  const email = data?.user?.email?.toLowerCase();
+  if (error || !email) return { error: "err.link" };
+  if (!isAcademicEmail(email)) return { error: "verify.not_academic" };
+  await q(`update student_profiles set verification_method = 'email_otp', verification_status = 'verified', college_email = $2, updated_at = now() where user_id = $1`, [user.id, email]);
+  await q(`insert into verification_requests (student_id, method, status, reviewed_at) values ($1,'email_otp','verified',now())`, [user.id]);
+  revalidatePath("/student", "layout");
+  return { ok: true };
 }
 
 export async function verifyCollegeOtp(_: FormState, form: FormData): Promise<FormState> {

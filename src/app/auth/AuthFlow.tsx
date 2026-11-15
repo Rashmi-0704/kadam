@@ -95,18 +95,26 @@ export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | 
           <h1 className="text-2xl font-bold">{t("auth.code_title")}</h1>
           <p className="mt-1 text-ink-2">{t("auth.code_sent", { email })}</p>
         </div>
-        <div className="flex gap-3 rounded-2xl bg-saffron-soft p-4">
-          <span aria-hidden="true" className="text-2xl">✉️</span>
-          <p className="text-sm"><strong>{t("auth.link_tip_title")}</strong> {t("auth.link_tip")}</p>
-        </div>
+        <ol className="space-y-3 rounded-2xl bg-saffron-soft p-4">
+          {["auth.link_step1", "auth.link_step2", "auth.link_step3"].map((k, i) => (
+            <li key={k} className="flex gap-3">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-paper">{i + 1}</span>
+              <span className="pt-0.5 font-medium">{t(k)}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="text-sm text-ink-3">{t("auth.link_spam")}</p>
         <input type="hidden" name="email" value={email} />
-        <div>
-          <label className="label" htmlFor="code">{t("auth.code_label")}</label>
-          <input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6} required
-            className="input text-center font-display text-3xl font-bold tracking-[0.5em]" placeholder="••••••" autoFocus />
-        </div>
-        {verifyState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(verifyState.error)}</p>}
-        <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.verify")}</SubmitButton>
+        <details className="rounded-xl border border-line p-3" open={Boolean(verifyState.error)}>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-2">{t("auth.have_code")}</summary>
+          <div className="mt-3 space-y-3">
+            <label className="label" htmlFor="code">{t("auth.code_label")}</label>
+            <input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6}
+              className="input text-center font-display text-3xl font-bold tracking-[0.5em]" placeholder="••••••" />
+            {verifyState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(verifyState.error)}</p>}
+            <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.verify")}</SubmitButton>
+          </div>
+        </details>
         <button type="button" className="btn-ghost w-full" onClick={() => setEditingEmail(true)}>{t("auth.change_email")}</button>
       </form>
     );
