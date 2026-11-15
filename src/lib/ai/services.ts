@@ -51,11 +51,11 @@ export async function parseCv(input: { bytes?: Uint8Array; mime?: string; text?:
     temperature: 0.1,
   });
   if (ai) return ai;
-  const text = input.text ?? (input.bytes && input.mime?.startsWith("text/") ? new TextDecoder().decode(input.bytes) : "");
+  const text = input.text ?? "";
   return {
     name: "",
     education: [],
-    skills: SKILL_LEXICON.filter((s) => lc(text).includes(lc(s))),
+    skills: SKILL_LEXICON.filter((s) => new RegExp(`(^|[^a-z])${s.toLowerCase().replace(/[.+]/g, (c) => "[" + c + "]")}($|[^a-z])`).test(lc(text))),
     experience: [],
     interests: ROLES.filter((r) => hits(text, r.keywords) > 0).slice(0, 4).map((r) => r.title),
   };
@@ -142,11 +142,23 @@ export async function buildPathways(input: { cv: ParsedCv | null; summary: Intak
   const pivotR = [...scored].filter((s) => !nowR.includes(s)).sort((a, b) => b.interest - a.interest || b.skill - a.skill).slice(0, 2);
   const stretchSlug = targets.map((t) => ROLES.find((r) => lc(r.title) === lc(t) || r.slug === slugify(t))).find((r) => r && !nowR.some((n) => n.r === r) && !pivotR.some((p) => p.r === r));
   const stretch = stretchSlug ?? ROLES.find((r) => r.slug === "product-manager")!;
-  const topSkills = (input.cv?.skills ?? []).slice(0, 2).join(" and ");
+  const matched = (r: (typeof ROLES)[number], text: string) => {
+    const cvSkills = (input.cv?.skills ?? []).filter((s) => r.keywords.some((k) => lc(s).includes(k) || k.includes(lc(s))));
+    if (cvSkills.length) return cvSkills.slice(0, 3);
+    return r.keywords.filter((k) => /^[a-z]/.test(k) && lc(text).includes(k)).slice(0, 2);
+  };
+  const list = (a: string[]) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at(-1)}` : a[0] ?? "");
+  const top = (input.cv?.skills ?? []).slice(0, 2);
   return {
-    now: nowR.map(({ r }) => ({ role: r.title, slug: r.slug, rationale: topSkills ? `Your ${topSkills} already match everyday work in this role.` : "Your studies and projects match the basics of this role." })),
-    pivot: pivotR.map(({ r }) => ({ role: r.title, slug: r.slug, rationale: "It builds on what you enjoy and needs only a few new skills." })),
-    stretch: [{ role: stretch.title, slug: stretch.slug, rationale: "An ambitious goal your strengths can grow into with real project experience." }],
+    now: nowR.map(({ r }) => {
+      const m = matched(r, skillsText);
+      return { role: r.title, slug: r.slug, rationale: m.length ? `Your ${list(m)} already match everyday ${r.title} work.` : top.length ? `Your ${list(top)} give you a head start here.` : "Your studies and projects match the basics of this role." };
+    }),
+    pivot: pivotR.map(({ r }) => {
+      const m = r.keywords.filter((k) => /^[a-z]/.test(k) && lc(interestText).includes(k)).slice(0, 2);
+      return { role: r.title, slug: r.slug, rationale: m.length ? `You talked about ${list(m)} — this role builds on that with a few new skills.` : "It builds on what you enjoy and needs only a few new skills." };
+    }),
+    stretch: [{ role: stretch.title, slug: stretch.slug, rationale: targets.some((x) => lc(x) === lc(stretch.title)) ? `You named ${stretch.title} as a goal. Real projects will build the experience it needs.` : "An ambitious goal your strengths can grow into with real project experience." }],
   };
 }
 

@@ -1,7 +1,8 @@
 import "server-only";
 import path from "node:path";
 import fs from "node:fs";
-import { env } from "./env";
+import { env, hasSupabaseStorage } from "./env";
+import { adminClient } from "./supabase";
 import { SCHEMA_SQL } from "@/db/schema";
 import { seed, RESET_SQL } from "@/db/seed-data";
 
@@ -15,9 +16,21 @@ const g = globalThis as unknown as { __kadamDb?: Promise<Db> };
 async function init(): Promise<Db> {
   if (env.dbUrl) {
     const postgres = (await import("postgres")).default;
-    const sql = postgres(env.dbUrl, { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15 });
+    // Provider URLs can carry extra query params (e.g. Supabase's `supa=`) that Postgres rejects as settings.
+    const url = new URL(env.dbUrl);
+    const local = /^(localhost|127\.0\.0\.1)$/.test(url.hostname);
+    url.search = "";
+    const sql = postgres(url.toString(), { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15, ssl: local ? false : "require", onnotice: () => {} });
     const q: Query = async (t, p = []) => Array.from(await sql.unsafe(t, p as any[])) as Row[];
-    return { q, exec: async (s) => void (await sql.unsafe(s)), kind: "postgres" };
+    const exec = async (s: string) => void (await sql.unsafe(s));
+    // First connection to an empty database: create the schema, storage buckets and demo data.
+    const exists = await q(`select to_regclass('public.users') as t`);
+    if (!exists[0]?.t) {
+      await exec(SCHEMA_SQL);
+      await ensureSupabaseBuckets();
+      await seed(q, putSupabaseBlob);
+    }
+    return { q, exec, kind: "postgres" };
   }
   // Local / fallback database: embedded Postgres (PGlite).
   const { PGlite } = await import("@electric-sql/pglite");
@@ -31,6 +44,25 @@ async function init(): Promise<Db> {
     await seed(q, putBlob(q));
   }
   return { q, exec: async (s) => void (await db.exec(s)), kind: "pglite" };
+}
+
+const BUCKETS = ["cvs", "student-ids", "problem-files", "submissions", "chat-files"];
+
+async function ensureSupabaseBuckets() {
+  if (!hasSupabaseStorage()) return;
+  const sb = adminClient();
+  const { data } = await sb.storage.listBuckets();
+  for (const b of BUCKETS) if (!data?.some((x) => x.name === b)) await sb.storage.createBucket(b, { public: false, fileSizeLimit: "5MB" });
+}
+
+async function putSupabaseBlob(p: string, bytes: Uint8Array, type: string) {
+  if (!hasSupabaseStorage()) return;
+  await adminClient().storage.from("student-ids").upload(p, bytes, { contentType: type, upsert: true });
+}
+
+export async function seedPut() {
+  const db = await getDb();
+  return db.kind === "postgres" ? putSupabaseBlob : putBlob(db.q);
 }
 
 function putBlob(q: Query) {
@@ -53,8 +85,8 @@ export async function one<T = Row>(text: string, params: unknown[] = []): Promis
 }
 export const J = (v: unknown) => JSON.stringify(v ?? null);
 
-export async function resetDemoData(put: (p: string, b: Uint8Array, t: string) => Promise<void>) {
+export async function resetDemoData() {
   const db = await getDb();
   await db.exec(RESET_SQL);
-  await seed(db.q, put);
+  await seed(db.q, await seedPut());
 }

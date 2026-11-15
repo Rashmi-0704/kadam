@@ -377,6 +377,7 @@ export async function seed(q: Q, put: Put) {
 
 // Removes only the seeded demo accounts (and everything that cascades from them), then the seed can run again.
 export const RESET_SQL = `
+update verification_requests set reviewed_by = null where reviewed_by in (select id from users where email like '%@kadam.example');
 delete from users where email like '%@kadam.example';
 delete from roadmaps where source = 'seed';
 delete from blobs where path like 'student-ids/ids/meera-%';

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { T } from "@/lib/i18n/config";
+import type { Row } from "@/lib/db";
 import { roleTitle } from "@/db/taxonomy";
 
 type Cat = { sector?: string; problem_type?: string; skills?: string[]; difficulty?: string; time_needed?: string; work_mode?: string; city?: string; related_roles?: string[] };
@@ -50,7 +51,7 @@ export function ProblemCard({
   href,
   fit,
 }: {
-  p: { id: string; title: string; business_name: string; city?: string; categories: Cat; takers: number; status?: string };
+  p: Row;
   t: T;
   href: string;
   fit?: string | null;

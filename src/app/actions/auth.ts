@@ -7,7 +7,6 @@ import { q, one, resetDemoData } from "@/lib/db";
 import { setSession, currentUser, homeFor } from "@/lib/session";
 import { isAcademicEmail } from "@/db/taxonomy";
 import { DEMO_ACCOUNTS } from "@/db/seed-data";
-import { putBytes } from "@/lib/storage";
 
 const Email = z.string().trim().toLowerCase().email();
 
@@ -75,6 +74,6 @@ export async function demoSignIn(form: FormData) {
 
 export async function demoReset() {
   if (!env.demoMode) redirect("/");
-  await resetDemoData((p, b, t) => putBytes("student-ids", p, b, t));
+  await resetDemoData();
   redirect("/demo?reset=1");
 }

@@ -1,0 +1,55 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1447 >>
+stream
+BT
+/F2 20 Tf 1 0 0 1 56 790 Tm (Ananya Das) Tj
+/F1 11 Tf 1 0 0 1 56 758 Tm (B.Tech, Computer Science \(3rd year\) - Odisha University of Technology and Research, Bhubaneswar) Tj
+/F1 11 Tf 1 0 0 1 56 738 Tm (Bhubaneswar, Odisha) Tj
+/F2 13 Tf 1 0 0 1 56 716 Tm () Tj
+/F2 13 Tf 1 0 0 1 56 694 Tm (Skills) Tj
+/F1 11 Tf 1 0 0 1 56 674 Tm (Python, SQL, Excel, Google Sheets, HTML, CSS, JavaScript, React \(basics\), Git, Data analysis) Tj
+/F2 13 Tf 1 0 0 1 56 652 Tm () Tj
+/F2 13 Tf 1 0 0 1 56 630 Tm (Projects) Tj
+/F1 11 Tf 1 0 0 1 56 610 Tm (Canteen pre-order web app - React and Google Sheets; used by 120 students in my hostel for one semester.) Tj
+/F1 11 Tf 1 0 0 1 56 590 Tm (College fest sales analysis - cleaned 3,000 rows of stall sales in Python and pandas; found the top 5 stalls.) Tj
+/F1 11 Tf 1 0 0 1 56 570 Tm (Campus newsletter - wrote and edited 6 issues of the CSE department newsletter.) Tj
+/F2 13 Tf 1 0 0 1 56 548 Tm () Tj
+/F2 13 Tf 1 0 0 1 56 526 Tm (Experience) Tj
+/F1 11 Tf 1 0 0 1 56 506 Tm (Volunteer, NSS unit - taught basic computer skills to 25 women in a self-help group \(2025\).) Tj
+/F1 11 Tf 1 0 0 1 56 486 Tm (Summer project, family medical shop - built a stock list in Google Sheets with low-stock alerts.) Tj
+/F2 13 Tf 1 0 0 1 56 464 Tm () Tj
+/F2 13 Tf 1 0 0 1 56 442 Tm (Interests) Tj
+/F1 11 Tf 1 0 0 1 56 422 Tm (Data, small businesses, startups, and writing. Curious about journalism and product management.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001749 00000 n 
+0000001819 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1894
+%%EOF

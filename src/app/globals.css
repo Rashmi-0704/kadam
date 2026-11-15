@@ -92,6 +92,10 @@ h1, h2, h3, .font-display {
   @page {
     margin: 14mm;
   }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   body {
     background: #fff !important;
   }

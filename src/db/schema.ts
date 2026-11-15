@@ -44,7 +44,7 @@ create table if not exists verification_requests (
   status text not null default 'pending' check (status in ('pending','verified','rejected')),
   note text,
   submitted_at timestamptz not null default now(),
-  reviewed_by uuid references users(id),
+  reviewed_by uuid references users(id) on delete set null,
   reviewed_at timestamptz
 );
 
