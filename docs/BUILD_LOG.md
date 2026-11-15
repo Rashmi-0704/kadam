@@ -3,7 +3,7 @@
 Running log of decisions, conflicts and setup steps. If work is interrupted, resume from **Current stage**.
 
 ## Current stage
-Build complete. Remaining blocker: connect Supabase (one manual click on the Supabase terms, see Manual steps). All 7 UI languages done.
+Build complete and running on Supabase. Full demo path verified on the live URL (phone size). Remaining manual step: switch the Supabase sign-in email template to show the 6-digit code.
 
 Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student side; engagement + impact reports; roadmaps, notifications, admin queue, student dashboard).
 
@@ -12,7 +12,7 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 |---|---|---|
 | Next.js 16.4 (App Router) + Tailwind 4 | Done | `kadam/` |
 | Vercel project | Done | `mesa-90a8/kadam` → https://kadam-virid.vercel.app. Linked and deployed with the Vercel CLI (no Vercel connector was available in this session). Env vars set: `SESSION_SECRET`, `DEMO_MODE=true`, `GEMINI_MODEL`, `SARVAM_STT_MODEL` (production, preview, development). |
-| Supabase project | **Blocked — needs one click from a person** | No Supabase connector was available, and the Supabase CLI is not logged in. Provisioning through the Vercel Marketplace (`vercel integration add supabase`) stops at "accept Supabase terms in the browser". See Manual steps. |
+| Supabase project | **Done** (15 Nov) | Created through the Vercel Marketplace (`kadam-db`, connected to the `kadam` project) after the terms were accepted. Env vars synced to Vercel and `.env.local`. On first connection the app created the schema, five private storage buckets and the demo data. |
 | Database until then | Partial (fallback) | With no `POSTGRES_URL`/`DATABASE_URL`, the app runs on an embedded Postgres (PGlite) with the same schema and seed. Locally it persists in `.data/` and the whole demo path works. **On Vercel it is per-instance and temporary**: seeded pages read fine, but a multi-step write (e.g. creating a problem, then answering follow-ups) can land on a different instance and lose the draft. Verified on 15 Nov: the Hindi problem draft disappeared mid-intake. The deployed demo path needs Supabase connected. |
 | Supabase auto-setup | Done | On first connection to an empty Postgres, the app creates the schema, the five private storage buckets and the demo data by itself. The SQL is also in `supabase/migrations/20261115000000_init.sql`. |
 | Email OTP | Built, not live | Uses Supabase Auth (`signInWithOtp` + `verifyOtp` type `email`). Without Supabase the sign-in page shows a friendly "couldn't send a code" message; everyone can still sign in through `/demo`. |
@@ -58,6 +58,14 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 ## Test pass (15 Nov, local build)
 Verified: take up → chat with a file attachment (download works) → taken_up becomes in_progress on first message → withdraw (chat locks, business notified, taker count drops) · submit → receipt → needs changes with a reason → student sees the reason → resubmit · admin reject with note → student sees it → ID re-upload → pending · admin approve · roadmap for an unseeded role (template, upgraded to AI once a key is set) · roadmap step progress persists · filters + search · close to new students blocks take-up · notifications list and links · settings · server refuses a rejection without a reason.
 Fixed: take-up notice no longer shows after withdrawing; chat hides the Live dot when closed.
+33. **Fixed: JSON stored as strings on Supabase.** postgres.js JSON-encodes values bound to `jsonb`, so pre-stringified values were stored as JSON strings (the embedded fallback didn't show this). The Postgres adapter now parses parameters the SQL casts to `::jsonb`. Tables were dropped and rebuilt once to fix the stored demo data.
+34. **Sign-in asks "Who are you?" first** (student or business), then email, code and name. The role can be changed at any step.
+35. **Roadmap catalogue** (`src/db/roadmap-catalog.ts`): about 50 role-based (by stream) and skill-based roadmaps with search, each built from its own key topics; Gemini writes richer ones when the key is set. **roadmap.sh content is not copied** — its license allows personal use only — instead each roadmap links to the matching roadmap.sh page with credit.
+36. **Relevant roadmaps on every problem** (student and business problem pages), from the problem's career roles and skills.
+37. **Dashboard insights**: large count-up tiles on both dashboards.
+
+## Live demo walk (15 Nov, kadam-virid.vercel.app on Supabase, phone size)
+Sharma Kirana types the problem in Hindi → 6 Hindi follow-ups → review (timeline "2 हफ्ते में", retail / tech build / 1–4 weeks) → live. Ananya uploads the sample CV → skills read → 4-question chat → Now: Frontend Developer, Data Analyst · Pivot: UX Designer, Journalist · Stretch: Product Manager → approve. Suggested for you lists the new kirana problem 2nd with a fit reason; skills to brush up and relevant roadmaps show; take up → chat → submit. Sharma confirms receipt → In use → impact update → public report v3 with resume bullets, no email or college shown. Accounts reset afterwards.
 
 ## Conflicts resolved
 1. **Connectors**: the prompt said Supabase and Vercel connectors were available; neither was attached to this session. Used the Vercel CLI (logged in) for Vercel, and built a self-bootstrapping Supabase path plus an embedded-Postgres fallback for the database.
