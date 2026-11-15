@@ -3,6 +3,7 @@ import { q, one, J } from "./db";
 import { generateRoadmap } from "./ai/services";
 import { slugify } from "@/db/taxonomy";
 import { flattenTopics, normalizeSections, type Section } from "@/db/roadmaps-data";
+import { catalogItem } from "@/db/roadmap-catalog";
 
 export type Roadmap = { role: string; title: string; summary: string; sections: Section[]; source: string };
 export type TopicStatus = "done" | "learning" | "skipped";
@@ -16,9 +17,10 @@ export async function getRoadmap(roleParam: string): Promise<Roadmap | null> {
   // Upgrade older AI/template roadmaps that were stored as a flat list.
   if (row && row.source !== "template" && !Array.isArray(row.steps)) return fromRow(row);
   if (row && row.source === "seed") return fromRow(row);
-  const gen = await generateRoadmap(role);
-  // Keep template roadmaps replaceable: the next open will try the AI again.
-  if (row && gen.source === "template" && !Array.isArray(row.steps)) return fromRow(row);
+  const c = catalogItem(role);
+  const gen = await generateRoadmap(role, c ? { title: c.title, blurb: c.blurb, topics: c.topics, kind: c.kind, group: c.group } : undefined);
+  // Template roadmaps are built locally (no AI call) and never stored, so the next open can try the AI again.
+  if (gen.source === "template") return { role, ...gen };
   await q(
     `insert into roadmaps (role, title, summary, steps, source) values ($1,$2,$3,$4::jsonb,$5)
      on conflict (role) do update set title = excluded.title, summary = excluded.summary, steps = excluded.steps, source = excluded.source, created_at = now()`,

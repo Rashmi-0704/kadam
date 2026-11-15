@@ -8,6 +8,7 @@ import { CategoryChips, ProblemStatement, TakerCount } from "@/components/Proble
 import { gapsFor, liveProblems, suggestions, reasonText } from "@/lib/matching";
 import { TakeUpButton } from "./TakeUpButton";
 import { roleTitle } from "@/db/taxonomy";
+import { RelevantRoadmaps } from "@/components/RelevantRoadmaps";
 
 export const metadata = { title: "Problem" };
 
@@ -76,6 +77,7 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
           <Section title={t("bp.statement")} className="mt-8">
             <div className="card px-5 py-2"><ProblemStatement p={p} t={t} /></div>
           </Section>
+          <RelevantRoadmaps roles={p.categories?.related_roles ?? []} skills={p.categories?.skills ?? []} t={t} />
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">

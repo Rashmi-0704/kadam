@@ -5,6 +5,7 @@ import { getT, getLang } from "@/lib/i18n/server";
 import { EmptyState, PageTitle, Section, StatusBadge, fmtDate } from "@/components/ui";
 import { roleTitle } from "@/db/taxonomy";
 import { progressOf } from "@/lib/roadmaps";
+import { InsightTiles, ICONS } from "@/components/InsightTiles";
 
 export const metadata = { title: "Dashboard" };
 
@@ -37,6 +38,14 @@ export default async function StudentDashboard() {
   return (
     <div>
       <PageTitle eyebrow={t("sd.eyebrow")} title={t("sd.title", { name: firstName })} />
+      <InsightTiles
+        items={[
+          { label: t("ins.taken"), value: engagements.filter((e) => e.status !== "withdrawn").length, tone: "ink", icon: ICONS.briefcase, href: "/student/problems" },
+          { label: t("ins.in_use"), value: engagements.filter((e) => ["accepted", "in_use"].includes(e.status)).length, hint: t("ins.in_use_hint"), tone: "leaf", icon: ICONS.check },
+          { label: t("ins.reports"), value: reports.length, tone: "saffron", icon: ICONS.report, href: reports[0] ? `/reports/${reports[0].share_token}` : undefined },
+          { label: t("ins.topics"), value: progress.reduce((n, r) => n + progressOf(r.steps, r.statuses).done, 0), hint: t("ins.topics_hint"), tone: "indigo", icon: ICONS.steps, href: "/student/roadmaps" },
+        ]}
+      />
 
       {nextStep && (
         <div className="card mb-8 flex flex-col gap-4 border-ink bg-ink p-6 text-paper sm:flex-row sm:items-center sm:justify-between">

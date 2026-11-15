@@ -175,8 +175,10 @@ const TopicSchema = z.object({
 });
 const RoadmapGen = z.object({ summary: z.string(), sections: z.array(z.object({ title: z.string(), topics: z.array(TopicSchema).min(1).max(6) })).min(2).max(4) });
 
-export async function generateRoadmap(role: string): Promise<{ title: string; summary: string; sections: Section[]; source: string }> {
-  const title = roleTitle(role);
+export type RoadmapHint = { title: string; blurb: string; topics: string[]; kind: "role" | "skill"; group: string };
+
+export async function generateRoadmap(role: string, hint?: RoadmapHint): Promise<{ title: string; summary: string; sections: Section[]; source: string }> {
+  const title = hint?.title ?? roleTitle(role);
   const res = obj({ title: str, url: str, type: { type: "string", enum: ["article", "video", "course", "docs", "tool"] } });
   const ai = await geminiJson({
     system:
@@ -184,7 +186,8 @@ export async function generateRoadmap(role: string): Promise<{ title: string; su
       `each topic has a one-to-two sentence explainer, skill keywords, 1-3 free, well-known resources with real URLs and a type, ` +
       `an 'optional' flag for nice-to-have topics, and 0-4 subtopics (title, one-sentence description, optional flag). ` +
       `End the last section with a topic about solving a real problem for a small business on Kadam. ${STYLE}`,
-    parts: [{ text: `Role: ${title}` }],
+    parts: [{ text: `${hint?.kind === "skill" ? "Skill" : "Role"}: ${title}${hint ? `
+Key areas to cover, in order: ${hint.topics.join(", ")}` : ""}` }],
     zod: RoadmapGen,
     jsonSchema: obj({
       summary: str,
@@ -212,17 +215,40 @@ export async function generateRoadmap(role: string): Promise<{ title: string; su
   };
   if (ai) return { title, summary: ai.summary, sections: ai.sections.map((sec, si) => ({ title: sec.title, topics: sec.topics.map((tp, ti) => toTopic(tp, si, ti)) })), source: "ai" };
   const v = (q: string): Resource => ({ title: `Video lessons: ${q}`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, type: "video" });
+  const tech = hint ? /tech|coding|tools/i.test(hint.group) : false;
+  const read = (q: string): Resource => tech
+    ? { title: `freeCodeCamp: ${q}`, url: `https://www.freecodecamp.org/news/search/?query=${encodeURIComponent(q)}`, type: "article" }
+    : { title: `Khan Academy: ${q}`, url: `https://www.khanacademy.org/search?page_search_query=${encodeURIComponent(q)}`, type: "course" };
+  if (hint && hint.topics.length >= 3) {
+    const half = Math.ceil(hint.topics.length / 2);
+    const mk = (name: string, si: number, ti: number): Topic => ({
+      id: `${prefix}-${si + 1}-${ti + 1}`,
+      title: name,
+      description: `Learn ${name.toLowerCase()} for ${title} work: the core ideas first, then practise on a small example of your own.`,
+      skills: [name.toLowerCase()],
+      resources: [v(`${name} ${hint.kind === "skill" ? title : ""} for beginners`.replace(/\s+/g, " ")), read(name)],
+    });
+    return {
+      title,
+      summary: hint.blurb,
+      source: "template",
+      sections: [
+        { title: "Foundations", topics: hint.topics.slice(0, half).map((n, i) => mk(n, 0, i)) },
+        { title: "Core skills", topics: hint.topics.slice(half).map((n, i) => mk(n, 1, i)) },
+        { title: "Prove it", topics: [
+          { id: `${prefix}-3-1`, title: "Solve a real problem", description: `Take up a Kadam problem that needs ${title} and deliver it for a real business or NGO.`, skills: [], resources: [] },
+          { id: `${prefix}-3-2`, title: "Show your impact", description: "Share your impact report and resume bullets with recruiters.", skills: [], resources: [] },
+        ] },
+      ],
+    };
+  }
   return {
     title,
     summary: `A step-by-step path into ${title} work.`,
     source: "template",
     sections: [
       { title: "Understand the role", topics: [
-        { id: `${prefix}-1-1`, title: `What a ${title} does`, description: "Read three job descriptions and talk to one person who does this work.", skills: [], resources: [v(`what does a ${title} do`)],
-          children: [
-            { id: `${prefix}-1-1-1`, title: "Daily tasks", description: "List what they spend most of their week on.", skills: [], resources: [] },
-            { id: `${prefix}-1-1-2`, title: "Common tools", description: "Note the tools that appear in every job post.", skills: [], resources: [] },
-          ] },
+        { id: `${prefix}-1-1`, title: `What a ${title} does`, description: "Read three job descriptions and talk to one person who does this work.", skills: [], resources: [v(`what does a ${title} do`)] },
         { id: `${prefix}-1-2`, title: "Core concepts", description: "Learn the basic ideas and words used in this field.", skills: [], resources: [{ title: "Free courses on Khan Academy", url: "https://www.khanacademy.org/", type: "course" }] },
       ] },
       { title: "Build skills", topics: [

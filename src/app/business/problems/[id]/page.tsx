@@ -8,6 +8,7 @@ import { CategoryChips, ProblemStatement, TakerCount } from "@/components/Proble
 import { setProblemOpen, deleteDraft } from "@/app/actions/business";
 import { SubmitButton } from "@/components/SubmitButton";
 import { roleTitle } from "@/db/taxonomy";
+import { RelevantRoadmaps } from "@/components/RelevantRoadmaps";
 
 export const metadata = { title: "Problem" };
 
@@ -84,6 +85,7 @@ export default async function BusinessProblem({ params, searchParams }: { params
               <ProblemStatement p={p} t={t} />
             </div>
           </Section>
+          <RelevantRoadmaps roles={p.categories?.related_roles ?? []} skills={p.categories?.skills ?? []} t={t} linkable={false} />
         </div>
         <aside>
           <div className="card space-y-4 p-5">

@@ -8,6 +8,7 @@ import { BackLink, EmptyState } from "@/components/ui";
 import { RoadmapView } from "@/components/RoadmapView";
 import { ProblemCard } from "@/components/ProblemBits";
 import { flattenTopics } from "@/db/roadmaps-data";
+import { catalogItem } from "@/db/roadmap-catalog";
 
 export const metadata = { title: "Roadmap" };
 
@@ -38,6 +39,11 @@ export default async function RoadmapPage({ params, searchParams }: { params: Pr
         <h1 className="mt-1 text-3xl font-bold sm:text-4xl">{r.title}</h1>
         <p className="mt-2 text-ink-2">{r.summary}</p>
         <p className="mt-1 text-sm text-ink-3">{t("rm.topics_count", { n: topicCount })}</p>
+        {catalogItem(r.role)?.rsh && (
+          <a href={`https://roadmap.sh/${catalogItem(r.role)!.rsh}`} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-full border border-line bg-card px-3.5 py-1.5 text-sm font-semibold hover:border-ink">
+            {t("rm.rsh_link")} <span aria-hidden="true">↗</span>
+          </a>
+        )}
       </div>
       <div className="mb-6 inline-flex rounded-full border border-line bg-card p-1" role="tablist">
         <Link href={`/student/roadmaps/${r.role}`} role="tab" aria-selected={tab === "roadmap"} className={`inline-flex min-h-10 items-center rounded-full px-5 text-sm font-semibold ${tab === "roadmap" ? "bg-ink text-paper" : "text-ink-2"}`}>{t("rm.tab_roadmap")}</Link>

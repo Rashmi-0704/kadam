@@ -5,6 +5,7 @@ import { getT } from "@/lib/i18n/server";
 import { createDueReminders } from "@/lib/engagement";
 import { PageTitle, Section, EmptyState, StatusBadge, Notice } from "@/components/ui";
 import { CategoryChips, TakerCount } from "@/components/ProblemBits";
+import { InsightTiles, ICONS } from "@/components/InsightTiles";
 
 export const metadata = { title: "Dashboard" };
 
@@ -27,6 +28,7 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
       order by e.started_at desc`,
     [user.id, JSON.stringify(due)],
   );
+  const inUse = ((await q(`select count(*)::int as n from engagements e join problems p on p.id = e.problem_id where p.business_id = $1 and e.status in ('accepted','in_use')`, [user.id]))[0]?.n ?? 0) as number;
   const drafts = problems.filter((p) => p.status === "draft");
   const published = problems.filter((p) => p.status !== "draft");
   return (
@@ -37,6 +39,14 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
         action={<Link href="/business/problems/new" className="btn-accent w-full sm:w-auto">+ {t("bd.new")}</Link>}
       />
       {sp.welcome && <Notice kind="success" className="mb-6">{t("bd.welcome")}</Notice>}
+      <InsightTiles
+        items={[
+          { label: t("ins.live"), value: published.filter((p) => p.status === "live").length, tone: "ink", icon: ICONS.live },
+          { label: t("ins.students"), value: published.reduce((n, p) => n + p.takers, 0), hint: t("ins.students_hint"), tone: "indigo", icon: ICONS.people },
+          { label: t("ins.waiting"), value: published.reduce((n, p) => n + p.waiting, 0), hint: t("ins.waiting_hint"), tone: "saffron", icon: ICONS.inbox },
+          { label: t("ins.solutions"), value: inUse, hint: t("ins.solutions_hint"), tone: "leaf", icon: ICONS.check },
+        ]}
+      />
 
       {needsAction.length > 0 && (
         <Section title={t("bd.needs_action")}>
