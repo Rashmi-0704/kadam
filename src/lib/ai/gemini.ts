@@ -6,7 +6,7 @@ export type Part = { text: string } | { inline_data: { mime_type: string; data: 
 
 const GEMINI_FILE_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp", "image/heic", "text/plain", "text/markdown", "text/csv", "text/html"];
 export const geminiCanRead = (mime: string) => GEMINI_FILE_TYPES.includes(mime);
-export const hasGemini = () => Boolean(env.geminiKey);
+export const hasGemini = () => Boolean(env.geminiKey || env.geminiKey2);
 
 /**
  * One small Gemini call that must return JSON matching `schema`.
@@ -20,7 +20,7 @@ export async function geminiJson<T>(opts: {
   zod: z.ZodType<T>;
   temperature?: number;
 }): Promise<T | null> {
-  if (!env.geminiKey) return null;
+  if (!env.geminiKey && !env.geminiKey2) return null;
   const label = opts.system.slice(0, 40).replace(/\s+/g, " ");
   const t0 = Date.now();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(env.geminiModel)}:generateContent`;
@@ -34,15 +34,23 @@ export async function geminiJson<T>(opts: {
       maxOutputTokens: 8192,
     },
   });
+  const keys = [env.geminiKey, env.geminiKey2].filter(Boolean);
   for (const withSchema of [true, false]) {
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": env.geminiKey },
-        body: JSON.stringify(body(withSchema)),
-        signal: AbortSignal.timeout(30000),
-        cache: "no-store",
-      });
+      let res: Response | undefined;
+      // Primary key first; a second key is tried when the first is rate limited, rejected or the service is down.
+      for (const key of keys) {
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify(body(withSchema)),
+          signal: AbortSignal.timeout(30000),
+          cache: "no-store",
+        });
+        if (res.ok || ![401, 403, 429, 500, 503].includes(res.status)) break;
+        console.warn(`[gemini] HTTP ${res.status} on a key, trying next · ${label}`);
+      }
+      if (!res) return null;
       if (res.status === 400 && withSchema) {
         console.warn(`[gemini] schema rejected, retrying without it · ${label}`);
         continue;

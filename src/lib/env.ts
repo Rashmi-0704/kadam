@@ -14,6 +14,7 @@ export const env = {
   supabaseAnonKey: pick("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEY", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
   supabaseServiceKey: pick("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
   geminiKey: pick("GEMINI_API_KEY"),
+  geminiKey2: pick("GEMINI_API_KEY_2"),
   geminiModel: pick("GEMINI_MODEL") || "gemini-3.5-flash-lite",
   sarvamKey: pick("SARVAM_API_KEY"),
   sarvamModel: pick("SARVAM_STT_MODEL") || "saaras:v4",
