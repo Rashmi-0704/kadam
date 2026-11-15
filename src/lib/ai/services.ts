@@ -341,17 +341,25 @@ const IntakeQ = z.object({ done: z.boolean(), question: z.string().default(""), 
 
 export async function problemIntakeNext(input: { transcript: ChatTurn[]; lang: string; business: { name: string; sector: string; city: string }; fileParts: Part[] }) {
   const userTurns = input.transcript.filter((t) => t.role === "user").length;
-  const ai = await geminiJson({
-    system:
-      `You help a small business owner in India describe a problem so that a college student can solve it. The owner may be a first-time digital user. ` +
-      `Ask ONE short, warm question at a time, in ${LANG_NAME[input.lang] ?? "English"}, until you know: the problem, about the business, how it works today, ` +
-      `what a good result looks like, constraints, the expected timeline, and what resources they can share. Do not ask about things already answered. ` +
-      `When everything is known (or after 7 answers), set done=true. ${STYLE}`,
-    parts: [{ text: `Business: ${JSON.stringify(input.business)}\nConversation: ${JSON.stringify(input.transcript)}` }, ...input.fileParts],
-    zod: IntakeQ,
-    jsonSchema: obj({ done: { type: "boolean" }, question: str, missing: strArr }, ["done", "question"]),
-    temperature: 0.5,
-  });
+  const ask = () =>
+    geminiJson({
+      system:
+        `You help a small business owner in India describe a problem so that a college student can solve it. The owner may be a first-time digital user. ` +
+        `FIRST read everything they have written (and any attached files) and work out what they actually want built or fixed. ` +
+        `Each reply must be ONE short, warm message in ${LANG_NAME[input.lang] ?? "English"} that (a) briefly shows you understood their latest message in a few words, ` +
+        `and (b) asks the single most useful next question about THEIR specific request. Never ask a generic question unrelated to what they said, ` +
+        `never repeat a question, and never assume details they did not give (the business profile is only background; do not ask them to describe the business if their message is about something else). ` +
+        `If they are annoyed or repeat themselves, apologise in a few words and act on what they said. ` +
+        `Cover over the conversation, only where still unknown: what the problem or product is, who it is for, how it is handled today, what a good result looks like, constraints, the timeline, and what they can share. ` +
+        `When enough is known (or after 7 answers), set done=true. ${STYLE}`,
+      parts: [{ text: `Business profile (background only): ${JSON.stringify(input.business)}
+Conversation so far: ${JSON.stringify(input.transcript)}` }, ...input.fileParts],
+      zod: IntakeQ,
+      jsonSchema: obj({ done: { type: "boolean" }, question: str, missing: strArr }, ["done", "question"]),
+      temperature: 0.5,
+    });
+  // One retry so a single failed call does not drop the owner into the fixed question list.
+  const ai = (await ask()) ?? (await ask());
   if (ai && (ai.done || ai.question) && userTurns < 8) return ai.done ? { done: true as const } : { done: false as const, question: ai.question };
   // Rule-based: ask for each field in turn. The first user turn is the problem itself.
   const next = PROBLEM_FIELDS[userTurns];
