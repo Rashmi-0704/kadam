@@ -67,19 +67,25 @@ export function CountUp({ value, className = "" }: { value: string; className?: 
     const [, pre, num, post] = m;
     const target = parseFloat(num.replace(/,/g, ""));
     const decimals = (num.split(".")[1] ?? "").length;
+    const fmt = (v: number) => `${pre}${v.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${post}`;
     const mm = gsap.matchMedia();
     mm.add(motionOk, () => {
       const o = { v: 0 };
-      el.textContent = `${pre}0${post}`;
-      gsap.to(o, {
+      let started = false;
+      el.textContent = fmt(0);
+      const tween = gsap.to(o, {
         v: target,
-        duration: 1.6,
+        duration: 1.4,
         ease: "power2.out",
-        scrollTrigger: { trigger: el, start: "top 90%", once: true },
-        onUpdate: () => {
-          el.textContent = `${pre}${o.v.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${post}`;
-        },
+        paused: true,
+        onUpdate: () => { el.textContent = fmt(o.v); },
+        onComplete: () => { el.textContent = value; },
       });
+      const go = () => { if (!started) { started = true; tween.play(); } };
+      const st = ScrollTrigger.create({ trigger: el, start: "top 95%", once: true, onEnter: go });
+      // Never leave a wrong number on screen: if the animation hasn't run (hidden tab, odd scroll), show the real value.
+      const safety = window.setTimeout(() => { if (!started || tween.progress() < 1) { tween.kill(); el.textContent = value; } }, 2500);
+      return () => { window.clearTimeout(safety); st.kill(); tween.kill(); el.textContent = value; };
     });
   });
   return <span ref={ref} className={className}>{value}</span>;
