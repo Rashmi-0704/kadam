@@ -22,6 +22,7 @@ const P = (n: number) => `00000000-0000-4000-8000-0000000003${String(n).padStart
 export const DEMO_ACCOUNTS = [
   { id: IDS.ananya, role: "student", label: "Ananya Das", note: "B.Tech CSE · new profile" },
   { id: IDS.rohan, role: "student", label: "Rohan Mehta", note: "B.Com · solution in use" },
+  { id: IDS.meera, role: "student", label: "Meera Pillai", note: "BA Journalism · ID check pending" },
   { id: IDS.sharma, role: "business", label: "Sharma Kirana Store", note: "Bhubaneswar · kirana" },
   { id: IDS.annapurna, role: "business", label: "Annapurna Tiffin Services", note: "Bengaluru · food" },
   { id: IDS.pragati, role: "business", label: "Pragati Foundation", note: "Kolkata · NGO" },

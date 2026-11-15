@@ -32,7 +32,7 @@ export default async function StudentWorkspace({ params, searchParams }: { param
           <Link href={`/student/problems/${e.problem_id}`} className="hover:underline">{e.problem_title}</Link>
         </h1>
       </div>
-      {sp.new && <Notice kind="success" className="mb-5">{t("eng.taken_up_notice", { business: e.business_name })}</Notice>}
+      {sp.new && ["taken_up", "in_progress"].includes(e.status) && <Notice kind="success" className="mb-5">{t("eng.taken_up_notice", { business: e.business_name })}</Notice>}
       {e.status === "rejected" && lastReason && <Notice kind="error" className="mb-5"><strong>{t("eng.rejected_reason")}</strong> {lastReason.reason}</Notice>}
       {e.status === "needs_changes" && <Notice kind="warn" className="mb-5"><strong>{t("eng.needs_changes_notice")}</strong> {lastReason?.reason ?? ""}</Notice>}
       {e.status === "withdrawn" && <Notice kind="info" className="mb-5">{t("eng.withdrawn_notice")}</Notice>}

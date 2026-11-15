@@ -96,7 +96,7 @@ export function ChatThread({ engagementId, otherName, disabled = false }: { enga
     <div className="card flex flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <h2 className="font-bold">{t("chat.title", { name: otherName })}</h2>
-        <span className="flex items-center gap-1.5 text-xs text-ink-3"><span className="h-2 w-2 rounded-full bg-leaf" aria-hidden="true" />{t("chat.live")}</span>
+        {!disabled && <span className="flex items-center gap-1.5 text-xs text-ink-3"><span className="h-2 w-2 rounded-full bg-leaf" aria-hidden="true" />{t("chat.live")}</span>}
       </div>
       <div ref={box} className="h-[46dvh] min-h-72 space-y-3 overflow-y-auto bg-paper/60 p-4" aria-live="polite">
         {msgs === null ? (

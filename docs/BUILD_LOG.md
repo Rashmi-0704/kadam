@@ -49,6 +49,11 @@ Done: stages 1–5 (scaffold, schema, auth, seed, deploy; business side; student
 
 26. **Phones**: the Take up card appears right under the fit reason on small screens.
 27. **UI translations** (hi, kn, ta, or, bn, gu) written for all 581 interface strings; placeholders and keys validated against English.
+28. **Meera (ID check pending) is on the `/demo` list**, so the ID upload and admin review flow can be shown end to end (admin rejects with a note → Meera re-uploads → admin approves).
+
+## Test pass (15 Nov, local build)
+Verified: take up → chat with a file attachment (download works) → taken_up becomes in_progress on first message → withdraw (chat locks, business notified, taker count drops) · submit → receipt → needs changes with a reason → student sees the reason → resubmit · admin reject with note → student sees it → ID re-upload → pending · admin approve · roadmap for an unseeded role (template, upgraded to AI once a key is set) · roadmap step progress persists · filters + search · close to new students blocks take-up · notifications list and links · settings · server refuses a rejection without a reason.
+Fixed: take-up notice no longer shows after withdrawing; chat hides the Live dot when closed.
 
 ## Conflicts resolved
 1. **Connectors**: the prompt said Supabase and Vercel connectors were available; neither was attached to this session. Used the Vercel CLI (logged in) for Vercel, and built a self-bootstrapping Supabase path plus an embedded-Postgres fallback for the database.
