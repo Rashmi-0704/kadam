@@ -22,12 +22,12 @@ const STEPS = Array.from({ length: 7 }, (_, i) => ({ x: STEP_X0 + i * STEP_W, h:
 
 type Shop = { x: number; w: number; h: number; awning: string; sign: string; label: string; windows: number };
 const SHOPS: Shop[] = [
-  { x: 28, w: 180, h: 196, awning: "#e07a10", sign: "#fbf7f0", label: "KIRANA", windows: 2 },
+  { x: 28, w: 180, h: 196, awning: "#f5a025", sign: "#fbf7f0", label: "KIRANA", windows: 2 },
   { x: 222, w: 150, h: 160, awning: "#2b7a57", sign: "#fbf7f0", label: "TIFFIN", windows: 1 },
   { x: 384, w: 112, h: 118, awning: "#b4432c", sign: "#fbf7f0", label: "CHAI", windows: 1 },
   { x: 958, w: 176, h: 206, awning: "#3c418f", sign: "#fbf7f0", label: "HANDLOOM", windows: 2 },
   { x: 1148, w: 138, h: 168, awning: "#2b7a57", sign: "#fbf7f0", label: "NGO", windows: 1 },
-  { x: 1298, w: 136, h: 186, awning: "#e07a10", sign: "#fbf7f0", label: "TUITION", windows: 2 },
+  { x: 1298, w: 136, h: 186, awning: "#f5a025", sign: "#fbf7f0", label: "TUITION", windows: 2 },
 ];
 
 const TOWERS = [
@@ -38,10 +38,10 @@ const TOWERS = [
 ];
 
 const CHIPS = [
-  { x: 1170, y: 120, w: 176, text: "Data Analyst", dot: "#e07a10" },
+  { x: 1170, y: 120, w: 176, text: "Data Analyst", dot: "#f5a025" },
   { x: 1010, y: 230, w: 158, text: "In use ✓", dot: "#2b7a57" },
   { x: 540, y: 330, w: 214, text: "Subscribers 38 → 81", dot: "#3c418f" },
-  { x: 1080, y: 400, w: 168, text: "+₹36k / month", dot: "#e07a10" },
+  { x: 1080, y: 400, w: 168, text: "+₹36k / month", dot: "#f5a025" },
   { x: 640, y: 150, w: 200, text: "Resume-ready report", dot: "#b4432c" },
 ];
 
@@ -145,11 +145,11 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
         <radialGradient id="k-sun" cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#ffd08a" />
           <stop offset="0.45" stopColor="#f59a2c" />
-          <stop offset="1" stopColor="#e07a10" stopOpacity="0" />
+          <stop offset="1" stopColor="#f5a025" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="k-glow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#e07a10" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#e07a10" stopOpacity="0" />
+          <stop offset="0" stopColor="#f5a025" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#f5a025" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="k-step" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#f6a33f" />
@@ -234,7 +234,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
         ))}
         <g className="k-flag">
           <rect x={STEPS[6].x + 24} y={GROUND - STEPS[6].h - 70} width="3" height="70" fill="#fbf7f0" />
-          <path d={`M${STEPS[6].x + 27},${GROUND - STEPS[6].h - 70} l38,12 l-38,12 z`} fill="#e07a10" />
+          <path d={`M${STEPS[6].x + 27},${GROUND - STEPS[6].h - 70} l38,12 l-38,12 z`} fill="#f5a025" />
         </g>
         <circle className="k-burst" cx={STEPS[6].x + 27} cy={GROUND - STEPS[6].h - 40} r="40" fill="none" stroke="#ffd08a" strokeWidth="3" opacity="0" />
       </g>
@@ -247,7 +247,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
             <rect x="-7" y="-20" width="5" height="20" rx="2.5" fill="#1c1a27" />
             <rect x="2" y="-20" width="5" height="20" rx="2.5" fill="#1c1a27" />
             <rect x="-11" y="-46" width="22" height="30" rx="9" fill="#3c418f" />
-            <rect x="-17" y="-44" width="9" height="20" rx="4" fill="#e07a10" />
+            <rect x="-17" y="-44" width="9" height="20" rx="4" fill="#f5a025" />
             <circle cx="0" cy="-57" r="10" fill="#c98a5a" />
             <path d="M-10,-60 q10,-14 20,0 q-4,-5 -10,-4 q-6,-1 -10,4z" fill="#1c1a27" />
           </g>

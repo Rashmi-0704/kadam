@@ -17,7 +17,7 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
       <svg viewBox="0 0 48 48" className="h-12 w-12" aria-hidden="true">
         <rect x="6" y="30" width="10" height="10" rx="2" fill="#f3ece0" />
         <rect x="19" y="22" width="10" height="18" rx="2" fill="#fcebd5" />
-        <rect x="32" y="12" width="10" height="28" rx="2" fill="#e07a10" />
+        <rect x="32" y="12" width="10" height="28" rx="2" fill="#f5a025" />
       </svg>
       <h3 className="text-lg font-bold">{title}</h3>
       {body && <p className="max-w-sm text-ink-2">{body}</p>}

@@ -79,7 +79,7 @@ export function AuthFlow({ initialStep, defaultRole }: { initialStep: "email" | 
           <input id="name" name="name" className="input" autoComplete="name" required minLength={2} autoFocus />
         </div>
         <label className="flex items-start gap-3 text-sm text-ink-2">
-          <input type="checkbox" name="consent" className="mt-0.5 h-5 w-5 shrink-0 accent-[#1c1a27]" required />
+          <input type="checkbox" name="consent" className="mt-0.5 h-5 w-5 shrink-0 accent-ink" required />
           <span>{t("auth.consent")}</span>
         </label>
         {roleState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(roleState.error)}</p>}

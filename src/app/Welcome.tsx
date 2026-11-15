@@ -24,10 +24,10 @@ function Door({ href, title, sub, go, icon, onFocus, tone }: { href: string; tit
       onPointerLeave={() => onFocus(false)}
       onFocus={() => onFocus(true)}
       onBlur={() => onFocus(false)}
-      className={`door group relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] border-2 p-6 text-center transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 sm:min-h-[340px] sm:justify-center sm:gap-5 sm:p-8 ${
+      className={`door group relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] border-2 active:translate-y-1 active:shadow-none p-6 text-center transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 sm:min-h-[340px] sm:justify-center sm:gap-5 sm:p-8 ${
         student
-          ? "border-saffron bg-saffron text-ink shadow-[0_24px_60px_-24px_rgba(224,122,16,0.8)] hover:bg-[#ec8a1f]"
-          : "border-paper bg-paper text-ink shadow-[0_24px_60px_-24px_rgba(251,247,240,0.45)] hover:bg-white"
+          ? "border-saffron bg-saffron text-ink shadow-[0_6px_0_#c2740b] hover:bg-[#f7aa3a]"
+          : "border-paper bg-paper text-ink shadow-[0_6px_0_#d4c7b0] hover:bg-white"
       }`}
     >
       <span className={`inline-flex h-20 w-20 items-center justify-center rounded-3xl sm:h-24 sm:w-24 ${student ? "bg-ink text-saffron" : "bg-ink text-paper"}`}>

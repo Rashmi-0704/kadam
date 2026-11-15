@@ -5,25 +5,28 @@
   --color-card: #ffffff;
   --color-ink: #1c1a27;
   --color-ink-2: #4b4759;
-  --color-ink-3: #7a7586;
-  --color-line: #e8dfd0;
+  --color-ink-3: #6b6678;
+  --color-line: #e6dccb;
+  --color-line-deep: #d4c7b0;
   --color-sand: #f3ece0;
-  --color-saffron: #e07a10;
-  --color-saffron-deep: #b45f07;
-  --color-saffron-soft: #fcebd5;
-  --color-leaf: #2b7a57;
+  --color-saffron: #f5a025;
+  --color-saffron-edge: #c2740b;
+  --color-saffron-deep: #9a5300;
+  --color-saffron-soft: #fdecd0;
+  --color-leaf: #1f7a52;
   --color-leaf-soft: #dcefe4;
   --color-clay: #b4432c;
   --color-clay-soft: #f8e1da;
   --color-indigo: #3c418f;
   --color-indigo-soft: #e6e7f6;
-  --font-display: var(--font-bricolage), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
+  --font-display: var(--font-nunito), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
   --font-sans: var(--font-hanken), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
   --radius-xl2: 1.25rem;
 }
 
 :root {
   color-scheme: light;
+  --press: 4px;
 }
 
 html {
@@ -40,50 +43,83 @@ body {
 
 h1, h2, h3, .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 :focus-visible {
   outline: 3px solid var(--color-saffron);
   outline-offset: 2px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
+/* Tactile buttons: a solid darker edge under the fill; pressing moves the button down onto its edge. */
 @utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition select-none disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-[15px] font-bold transition select-none disabled:cursor-not-allowed disabled:opacity-50;
+  box-shadow: 0 var(--press) 0 var(--edge, transparent);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 150ms ease, border-color 150ms ease;
+  margin-bottom: var(--press);
 }
 @utility btn-primary {
-  @apply btn bg-ink text-paper hover:bg-[#2f2b40] active:scale-[0.98];
+  @apply btn border-ink bg-ink text-paper hover:bg-[#2f2b40];
+  --edge: #000;
 }
 @utility btn-accent {
-  @apply btn bg-saffron text-ink hover:bg-[#ea8a25] active:scale-[0.98];
+  @apply btn border-saffron-edge bg-saffron text-ink hover:bg-[#f7aa3a];
+  --edge: var(--color-saffron-edge);
 }
 @utility btn-secondary {
-  @apply btn border border-line bg-card text-ink hover:border-ink-3 active:scale-[0.98];
+  @apply btn border-line-deep bg-card text-ink hover:bg-paper;
+  --edge: var(--color-line-deep);
 }
 @utility btn-ghost {
-  @apply btn text-ink-2 hover:bg-sand;
+  @apply btn border-transparent text-ink-2 hover:bg-sand;
+  margin-bottom: 0;
 }
 @utility btn-danger {
-  @apply btn border border-clay/40 bg-card text-clay hover:bg-clay-soft;
+  @apply btn border-clay/40 bg-card text-clay hover:bg-clay-soft;
+  --edge: color-mix(in srgb, var(--color-clay) 35%, white);
 }
 @utility btn-sm {
-  @apply min-h-10 px-4 text-sm;
+  @apply min-h-11 rounded-xl px-4 text-sm;
+  --press: 3px;
 }
 @utility card {
-  @apply rounded-2xl border border-line bg-card;
+  @apply rounded-[20px] border-2 border-line bg-card;
+  box-shadow: 0 4px 0 var(--color-line-deep);
+}
+@utility card-tap {
+  @apply card transition;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 150ms ease;
 }
 @utility input {
-  @apply block min-h-12 w-full rounded-xl border border-line bg-card px-4 py-3 text-base text-ink placeholder:text-ink-3 focus:border-ink focus:outline-none;
+  @apply block min-h-[52px] w-full rounded-[14px] border-2 border-line bg-card px-4 py-3 text-base text-ink placeholder:text-ink-3 focus:border-ink focus:outline-none;
 }
 @utility label {
-  @apply mb-1.5 block text-sm font-semibold text-ink-2;
+  @apply mb-1.5 block text-sm font-bold text-ink-2;
 }
 @utility chip {
-  @apply inline-flex items-center gap-1 rounded-full border border-line bg-paper px-2.5 py-1 text-xs font-medium text-ink-2;
+  @apply inline-flex items-center gap-1 rounded-full border-[1.5px] border-line bg-sand px-3 py-1 text-xs font-semibold text-ink-2;
 }
 @utility eyebrow {
-  @apply text-xs font-bold tracking-[0.12em] text-saffron-deep uppercase;
+  @apply text-xs font-extrabold tracking-[0.12em] uppercase;
+}
+
+/* zero-specificity default so text-saffron on dark sections can override it */
+:where(.eyebrow) { color: var(--color-saffron-deep); }
+
+@media (hover: hover) {
+  .card-tap:hover, a.card:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--color-line-deep); border-color: var(--color-line-deep); }
+}
+.btn:active:not(:disabled), .btn-primary:active:not(:disabled), .btn-accent:active:not(:disabled),
+.btn-secondary:active:not(:disabled), .btn-danger:active:not(:disabled) {
+  transform: translateY(calc(var(--press) - 1px));
+  box-shadow: 0 1px 0 var(--edge, transparent);
+}
+.card-tap:active, a.card:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--color-line-deep); }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-primary, .btn-accent, .btn-secondary, .btn-danger, .card-tap, a.card { transition: none; }
+  .btn:active, .card-tap:active, a.card:active { transform: none; }
 }
 
 .prose-kadam p + p { margin-top: 0.75rem; }

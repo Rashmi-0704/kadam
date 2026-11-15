@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
+import { Nunito, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { getDict, getLang } from "@/lib/i18n/server";
 import { I18nProvider } from "@/lib/i18n/client";
 
-const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
+const nunito = Nunito({ subsets: ["latin"], weight: ["700", "800", "900"], variable: "--font-nunito", display: "swap" });
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [lang, dict] = await Promise.all([getLang(), getDict()]);
   return (
-    <html lang={lang} className={`${bricolage.variable} ${hanken.variable} antialiased`}>
+    <html lang={lang} className={`${nunito.variable} ${hanken.variable} antialiased`}>
       <body className="min-h-dvh">
         <I18nProvider dict={dict} lang={lang}>
           {children}

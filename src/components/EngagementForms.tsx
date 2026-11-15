@@ -78,7 +78,7 @@ export function StatusSetter({ engagementId, current }: { engagementId: string; 
         <legend className="label">{t("eng.set_status")}</legend>
         {opts.map((o) => (
           <label key={o} className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 ${choice === o ? "border-ink bg-sand" : "border-line bg-card"}`}>
-            <input type="radio" name="status" value={o} checked={choice === o} onChange={() => setChoice(o)} className="mt-1 h-4 w-4 accent-[#1c1a27]" required />
+            <input type="radio" name="status" value={o} checked={choice === o} onChange={() => setChoice(o)} className="mt-1 h-4 w-4 accent-ink" required />
             <span>
               <span className="block font-semibold">{t(`status.${o}`)}</span>
               <span className="text-sm text-ink-2">{t(`eng.status_${o}_help`)}</span>

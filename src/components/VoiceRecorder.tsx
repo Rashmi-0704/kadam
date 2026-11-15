@@ -116,7 +116,7 @@ export function VoiceRecorder({ serverStt, onText, size = "lg" }: { serverStt: b
         aria-label={state === "recording" ? t("voice.stop") : t("voice.start")}
         className={`relative inline-flex items-center justify-center rounded-full transition ${
           big ? "h-24 w-24" : "h-12 w-12"
-        } ${state === "recording" ? "bg-clay text-white" : "bg-saffron text-ink hover:bg-[#ea8a25]"} disabled:opacity-60`}
+        } ${state === "recording" ? "bg-clay text-white" : "bg-saffron text-ink hover:bg-[#f7aa3a]"} disabled:opacity-60`}
       >
         {state === "recording" && <span className="absolute inset-0 animate-ping rounded-full bg-clay/40" aria-hidden="true" />}
         {state === "recording" ? (

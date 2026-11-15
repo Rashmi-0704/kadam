@@ -87,3 +87,10 @@ Hindi kirana problem → Gemini asked 4 relevant Hindi follow-ups (current metho
 
 ## Manual steps for the team
 See the final report (and README) — Supabase connection, OTP email template, Gemini and Sarvam keys.
+
+## Visual restyle (16 Nov): tactile, friendly design system
+Design inspiration from brilliant.org's interaction style (tokens read from its public CSS: palette structure, radii, spacing, and the "solid darker edge" pressable button). Nothing copied: no text, images, icons, fonts or brand colours. Kadam keeps its own identity (saffron primary, warm paper, Nunito headings). Full spec in `DESIGN.md`.
+- Visual changes only: `globals.css` tokens and utilities (`btn-*` with a 4 px solid edge that presses down, `card` with 2 px border and bottom edge, 52 px inputs, chips), Nunito for headings, saffron tuned to `#f5a025`, darker `ink-3` and `leaf` for AA contrast, Welcome cards given the same pressable edge, eyebrow colour now overridable on dark sections.
+- No routes, behaviour, copy or i18n strings changed.
+- Checks: `tsc --noEmit` and `eslint` clean; walked student and business screens at 375 px and 1280 px; business dashboard, new problem and settings checked at 360 px in all seven languages with no horizontal overflow.
+- Note: `docs/Kadam_Build_Prompt.md` is not in the repo; the demo path in `docs/Kadam_Context_Final.md` (section 10) was used.

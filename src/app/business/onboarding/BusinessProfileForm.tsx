@@ -22,7 +22,7 @@ export function BusinessProfileForm({ profile, next }: { profile: Profile; next?
         <div className="grid grid-cols-2 gap-2">
           {BUSINESS_TYPES.map((b) => (
             <label key={b} className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-line bg-card px-3 text-sm font-medium has-[:checked]:border-ink has-[:checked]:bg-sand">
-              <input type="radio" name="type" value={b} defaultChecked={profile?.type === b} required className="h-4 w-4 accent-[#1c1a27]" />
+              <input type="radio" name="type" value={b} defaultChecked={profile?.type === b} required className="h-4 w-4 accent-ink" />
               {t(`btype.${b}`)}
             </label>
           ))}
