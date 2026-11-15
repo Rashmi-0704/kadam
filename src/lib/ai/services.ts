@@ -36,7 +36,9 @@ const SKILL_LEXICON = [
 
 export async function parseCv(input: { bytes?: Uint8Array; mime?: string; text?: string }): Promise<ParsedCv> {
   const parts: Part[] = [{ text: "Extract the student's CV into JSON. Keep wording short. If something is missing, leave it empty." }];
-  if (input.bytes && input.mime && geminiCanRead(input.mime)) parts.push({ inline_data: { mime_type: input.mime, data: toBase64(input.bytes) } });
+  // Readable text (most PDFs) is much faster for the model than the file itself; send the file only for photos and scans.
+  const hasText = (input.text ?? "").replace(/\s+/g, " ").trim().length > 300;
+  if (!hasText && input.bytes && input.mime && geminiCanRead(input.mime)) parts.push({ inline_data: { mime_type: input.mime, data: toBase64(input.bytes) } });
   if (input.text) parts.push({ text: `CV text:\n${input.text.slice(0, 12000)}` });
   const ai = await geminiJson({
     system: `You read student CVs for Kadam, a platform where college students solve real problems for small businesses and NGOs. ${STYLE}`,

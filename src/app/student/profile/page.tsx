@@ -10,6 +10,9 @@ import { CvUpload } from "./CvUpload";
 import { Notice, PageTitle, fmtDate } from "@/components/ui";
 import { hasServerStt } from "@/lib/stt";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "Career profile" };
 
 export default async function ProfilePage() {

@@ -10,6 +10,9 @@ import { ProblemCard } from "@/components/ProblemBits";
 import { flattenTopics } from "@/db/roadmaps-data";
 import { catalogItem } from "@/db/roadmap-catalog";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "Roadmap" };
 
 export default async function RoadmapPage({ params, searchParams }: { params: Promise<{ role: string }>; searchParams: Promise<{ tab?: string }> }) {

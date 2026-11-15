@@ -9,6 +9,9 @@ import { answerIntake, finishIntakeNow } from "@/app/actions/business";
 import { SubmitButton } from "@/components/SubmitButton";
 import { StepRail } from "@/components/StepRail";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "New problem" };
 
 export default async function NewProblem({ searchParams }: { searchParams: Promise<{ draft?: string }> }) {

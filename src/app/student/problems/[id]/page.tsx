@@ -10,6 +10,9 @@ import { TakeUpButton } from "./TakeUpButton";
 import { roleTitle } from "@/db/taxonomy";
 import { RelevantRoadmaps } from "@/components/RelevantRoadmaps";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "Problem" };
 
 export default async function StudentProblem({ params }: { params: Promise<{ id: string }> }) {

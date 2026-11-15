@@ -8,6 +8,9 @@ import { ChatThread } from "@/components/ChatThread";
 import { ConfirmReceiptButton, StatusSetter, ImpactUpdateForm, FeedbackForm } from "@/components/EngagementForms";
 import { BackLink, StatusBadge } from "@/components/ui";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "Workspace" };
 
 export default async function BusinessWorkspace({ params }: { params: Promise<{ id: string }> }) {

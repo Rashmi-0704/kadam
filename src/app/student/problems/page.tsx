@@ -6,6 +6,9 @@ import { ProblemCard } from "@/components/ProblemBits";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState, Notice, PageTitle } from "@/components/ui";
 
+// AI calls can take several seconds.
+export const maxDuration = 60;
+
 export const metadata = { title: "Problems" };
 
 type SP = { tab?: string; sector?: string; type?: string; difficulty?: string; time?: string; mode?: string; q?: string; approved?: string };
