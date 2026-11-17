@@ -302,3 +302,24 @@ Numbered so they can be merged into docs/BUILD_LOG.md after decision 45.
 - AiChatPanel: wrapped action (catches thrown errors -> friendly retry bubble, rethrows NEXT_* redirects), optimistic user bubble, typing dots + pulsing avatar, word-by-word typing for the newest AI turn that arrived after mount, quick-reply chips only if `state.suggestions` is returned (no action returns it yet), `aiBusy` note, send disabled while pending.
 - ChatThread: slide-in for messages that appear after first load, optimistic "Sending…"/"Sent" bubble, own bubble now bg-primary.
 - New i18n keys in docs/notes/i18n-chat.json (chat.error_friendly, chat.ai_busy, chat.quick_replies, chat.sending, chat.sent); English fallbacks used until merged.
+
+### Round 2 fixes found during the live walk
+66. **Demo reset no longer fails** when an AI roadmap was cached earlier for a role that now has a hand-written roadmap (the seed upserts roadmaps).
+67. **The admin is not on `/demo`.** The brief describes `/demo` as "admin excluded", and the admin now signs in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. `demoSignIn` also refuses the seeded admin id.
+68. **Business intake always gets a timeline.** In the live test Gemini said "done" after one answer, with no timeline. If the follow-up answers don't mention one (English and Indian-language cues), Kadam asks its own translated timeline question as the last question, with no extra AI call. The Gemini request timeout is now 20 s, so a call plus one retry stays inside the 60 s function limit.
+
+### Live demo walk (17 Nov, kadam-virid.vercel.app, phone 390×844, Hindi UI for the business)
+1. **Reset:** reset the demo accounts.
+2. **Business (Sharma Kirana):** typed the udhaar problem in Hindi.
+   - Gemini asked one combined follow-up (how it is done today and what a good result looks like). Kadam then asked the timeline ("2 हफ़्ते").
+   - The draft was "Build simple digital credit ledger for local store", with every field filled in English and the timeline "within two weeks".
+   - After going live, the problem showed the New badge and "Be the first" (green dot), in Hindi.
+3. **Student (Rohan):** saw New, the AI fit reason, relevant roadmaps and skill gaps. Took the problem up, chatted and submitted.
+4. **Reports:**
+   - Confirming receipt built report **v1 straight away**.
+   - "In use" and an impact update (₹12,000 recovered, 4 hours a week) were posted within the 2-minute window. The report showed "Updating…" in Hindi.
+   - After the window there was **one** regeneration to v2, with both outcomes as highlighted numbers and resume bullets that use them.
+5. **Admin page:** non-admin accounts are sent away from `/admin`.
+6. **Clean-up:** demo accounts reset again, and the QA accounts were removed with `scripts/qa-cleanup.mjs` (1 account).
+
+**Real-account sign-up/sign-in was tested on the local server, not on the live site.** The local server uses the same code and the same Supabase project. My browser rules do not let me type passwords into a production site, so the live password test is a manual step for the team (see the final report).
