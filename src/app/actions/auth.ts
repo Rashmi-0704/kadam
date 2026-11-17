@@ -78,7 +78,7 @@ export async function demoSignIn(form: FormData) {
   if (!env.demoMode) redirect("/");
   const id = String(form.get("id"));
   const acct = DEMO_ACCOUNTS.find((a) => a.id === id);
-  if (!acct) redirect("/demo");
+  if (!acct || acct.role === "admin") redirect("/demo");
   const exists = await one(`select role from users where id = $1`, [id]);
   if (!exists) redirect("/demo?missing=1");
   await setSession(id);

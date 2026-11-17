@@ -13,7 +13,8 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
   if (!env.demoMode) notFound();
   const sp = await searchParams;
   const t = await getT();
-  const groups = ["student", "business", "admin"] as const;
+  // The admin is not on this list: the admin signs in with ADMIN_EMAIL / ADMIN_PASSWORD (round 2).
+  const groups = ["student", "business"] as const;
   return (
     <main className="mx-auto max-w-lg px-4 py-10">
       <Logo />

@@ -361,7 +361,8 @@ export async function seed(q: Q, put: Put) {
 
   // ---------- roadmaps ----------
   for (const r of SEEDED_ROADMAPS) {
-    await q(`insert into roadmaps (role, title, summary, steps, source) values ($1,$2,$3,$4::jsonb,'seed')`, [r.role, r.title, r.summary, J({ sections: r.sections })]);
+    await q(`insert into roadmaps (role, title, summary, steps, source) values ($1,$2,$3,$4::jsonb,'seed')
+       on conflict (role) do update set title = excluded.title, summary = excluded.summary, steps = excluded.steps, source = 'seed'`, [r.role, r.title, r.summary, J({ sections: r.sections })]);
   }
   const prog: [string, Record<string, string>][] = [
     ["digital-marketer", { "dm-basics": "done", "dm-basics-customer": "done", "dm-basics-offer": "done", "dm-basics-funnel": "done", "dm-local": "done", "dm-local-wa": "done", "dm-local-gbp": "learning", "dm-social": "done", "dm-social-calendar": "done", "dm-social-reels": "learning", "dm-seo": "learning", "dm-ads": "skipped" }],
