@@ -76,7 +76,7 @@ export async function geminiCall<T>(opts: {
           method: "POST",
           headers: { "content-type": "application/json", "x-goog-api-key": key },
           body: body(withSchema),
-          signal: AbortSignal.timeout(30000),
+          signal: AbortSignal.timeout(20000), // keeps call + one retry inside the 60 s function limit
           cache: "no-store",
         });
         if (res.ok || !KEY_FALLBACK.includes(res.status)) break;

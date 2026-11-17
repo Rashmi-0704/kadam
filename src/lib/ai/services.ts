@@ -525,6 +525,9 @@ export function heuristicMatch(input: { pathways: Pathways; skills: string[]; pr
 }
 
 /* ============================== AI-4a  Problem intake agent ============================== */
+// Words that show the owner has given a timeline (English and the six Indian UI languages).
+const TIMELINE_HINT = /(d+s*(day|days|week|weeks|month|months)|this week|next week|this month|next month|asap|urgent|by w+)|हफ़्त|हफ्त|सप्ताह|महीने में|महीने तक|दिन में|दिनों में|तक चाहिए|जल्दी|ವಾರ|ತಿಂಗಳ|ದಿನಗಳಲ್ಲಿ|வாரத்|மாதத்|நாட்களில்|ସପ୍ତାହ|ମାସ ଭିତରେ|ଦିନ ଭିତରେ|সপ্তাহ|মাসের মধ্যে|দিনের মধ্যে|અઠવાડિય|મહિનામાં|દિવસમાં/i;
+
 export const PROBLEM_FIELDS = ["problem", "background", "current_process", "desired_outcome", "constraints", "expected_timeline", "resources_provided"] as const;
 export type ProblemField = (typeof PROBLEM_FIELDS)[number];
 const IntakeQ = z.object({ done: z.boolean(), question: z.string().default(""), final: z.boolean().default(false), missing: z.array(z.string()).default([]) });
@@ -535,9 +538,15 @@ export const MAX_PROBLEM_FOLLOWUPS = 4;
  * AI-4a. `fileParts` should be passed only on the first call (the model reads the file once and its question shows it understood);
  * later turns say a file was attached. The draft call gets the file again.
  */
-export async function problemIntakeNext(input: { transcript: ChatTurn[]; lang: string; business: { name: string; sector: string; city: string }; fileParts: Part[]; hasFile?: boolean; ruleBasedTurns?: number; lastQuestionFinal?: boolean }) {
+export async function problemIntakeNext(input: { transcript: ChatTurn[]; lang: string; business: { name: string; sector: string; city: string }; fileParts: Part[]; hasFile?: boolean; ruleBasedTurns?: number; lastQuestionFinal?: boolean; timelineAsked?: boolean }) {
   const userTurns = input.transcript.filter((t) => t.role === "user").length;
   const asked = userTurns - 1;
+  // The timeline is required before drafting. If it hasn't come up in the follow-up answers (the first message
+  // describes the problem, so it is not counted), Kadam asks it itself as the last question: no extra AI call.
+  const followUps = input.transcript.filter((t) => t.role === "user").slice(1).map((t) => t.text).join(" ");
+  const timelineKnown = input.timelineAsked || TIMELINE_HINT.test(followUps);
+  const askTimeline = { done: false as const, question: undefined, questionKey: "pintake.expected_timeline", final: true, busy: false };
+  if (input.lastQuestionFinal && !timelineKnown && hasGemini()) return askTimeline;
   // Hard stop: the first message + MAX follow-up answers is enough to draft (the owner can edit everything on the review page).
   if ((asked >= MAX_PROBLEM_FOLLOWUPS || input.lastQuestionFinal) && !input.ruleBasedTurns && hasGemini()) return { done: true as const };
   const ask = () =>
@@ -566,6 +575,7 @@ export async function problemIntakeNext(input: { transcript: ChatTurn[]; lang: s
   let r = await ask();
   if (!r.data && !r.busy && hasGemini()) r = await ask();
   const ai = r.data;
+  if (ai?.done && !timelineKnown) return askTimeline;
   if (ai && (ai.done || ai.question)) return ai.done ? { done: true as const } : { done: false as const, question: ai.question, final: ai.final || asked + 1 >= MAX_PROBLEM_FOLLOWUPS };
   // Rule-based: ask for each field in turn. The first user turn is the problem itself.
   const next = PROBLEM_FIELDS[userTurns];

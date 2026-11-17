@@ -61,6 +61,7 @@ async function nextStep(problemId: string): Promise<{ step: "chat" | "review"; a
     ruleBasedTurns: turns.filter((x) => x.role === "assistant" && x.key).length,
     // The AI marked its previous question as the last one needed: go straight to the draft (saves a call).
     lastQuestionFinal: Boolean(turns.findLast((x) => x.role === "assistant")?.final),
+    timelineAsked: turns.some((x) => x.key === "pintake.expected_timeline"),
   });
   if (!next.done) {
     turns.push({ role: "assistant", text: next.question ?? "", key: next.questionKey, ...("final" in next && next.final ? { final: true } : {}) });
