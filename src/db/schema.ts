@@ -4,6 +4,10 @@
 // Small upgrades for databases created before a column existed. Safe to run on every start.
 export const UPGRADE_SQL = `
 alter table roadmap_progress add column if not exists statuses jsonb not null default '{}'::jsonb;
+create table if not exists ai_usage (bucket text not null, feature text not null, calls int not null default 0, limited int not null default 0, failed int not null default 0, primary key (bucket, feature));
+alter table ai_usage enable row level security;
+-- Every live or closed problem has a go-live date (drives the "New" badge and ranking).
+update problems set live_at = coalesce(live_at, created_at) where status in ('live','closed') and live_at is null;
 `;
 
 export const SCHEMA_SQL = `
@@ -211,4 +215,15 @@ alter table roadmap_progress enable row level security;
 alter table notifications enable row level security;
 alter table ai_cache enable row level security;
 alter table blobs enable row level security;
+
+-- Gemini limiter (per-minute bucket 'm:…', feature '*') and daily call counter per feature ('d:…', Pacific day).
+create table if not exists ai_usage (
+  bucket text not null,
+  feature text not null,
+  calls int not null default 0,
+  limited int not null default 0,
+  failed int not null default 0,
+  primary key (bucket, feature)
+);
+alter table ai_usage enable row level security;
 `;

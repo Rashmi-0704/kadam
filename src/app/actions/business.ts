@@ -8,9 +8,11 @@ import { BUSINESS_TYPES, SECTORS, PROBLEM_TYPES, DIFFICULTIES, TIME_NEEDED, WORK
 import { saveUpload, readBytes, type StoredFile } from "@/lib/storage";
 import { problemIntakeNext, draftProblem, type ChatTurn } from "@/lib/ai/services";
 import { geminiCanRead, toBase64, type Part } from "@/lib/ai/gemini";
+import { tryLock, shortHash } from "@/lib/ai/guard";
 import { getLang, getT } from "@/lib/i18n/server";
 
-export type FormState = { error?: string; ok?: boolean; n?: number };
+/** aiBusy: the chat reply came from the fixed question list because Gemini was rate-limited (the chat shows a friendly note). */
+export type FormState = { error?: string; ok?: boolean; n?: number; aiBusy?: boolean };
 
 export async function saveBusinessProfile(_: FormState, form: FormData): Promise<FormState> {
   const user = await requireUser("business");
@@ -34,27 +36,39 @@ async function fileParts(raw: { file?: StoredFile }): Promise<Part[]> {
   return f ? [{ text: "The owner attached this file about the problem:" }, { inline_data: { mime_type: raw.file.type, data: toBase64(f.bytes) } }] : [];
 }
 
-type IntakeTurn = ChatTurn & { key?: string };
+/** final: the AI said this is the last question it needs (the next answer goes straight to the draft). */
+type IntakeTurn = ChatTurn & { key?: string; final?: boolean };
 async function textTranscript(turns: IntakeTurn[]): Promise<ChatTurn[]> {
   const t = await getT();
   return turns.map((x) => ({ role: x.role, text: x.key ? t(x.key) : x.text }));
 }
 
-async function nextStep(problemId: string): Promise<"chat" | "review"> {
+async function nextStep(problemId: string): Promise<{ step: "chat" | "review"; aiBusy?: boolean }> {
   const { profile } = await requireBusiness();
   const p = await one(`select intake, raw_input from problems where id = $1`, [problemId]);
   const turns = (p!.intake ?? []) as IntakeTurn[];
   const transcript = await textTranscript(turns);
   const business = { name: profile.business_name, sector: profile.sector, city: profile.city };
-  const parts = await fileParts(p!.raw_input ?? {});
-  const next = await problemIntakeNext({ transcript, lang: await getLang(), business, fileParts: parts });
+  const hasFile = Boolean(p!.raw_input?.file);
+  // The attached file is sent with the first question only (and again for the draft), not with every follow-up.
+  const firstTurn = transcript.filter((x) => x.role === "user").length <= 1;
+  const next = await problemIntakeNext({
+    transcript,
+    lang: await getLang(),
+    business,
+    fileParts: hasFile && firstTurn ? await fileParts(p!.raw_input ?? {}) : [],
+    hasFile,
+    ruleBasedTurns: turns.filter((x) => x.role === "assistant" && x.key).length,
+    // The AI marked its previous question as the last one needed: go straight to the draft (saves a call).
+    lastQuestionFinal: Boolean(turns.findLast((x) => x.role === "assistant")?.final),
+  });
   if (!next.done) {
-    turns.push({ role: "assistant", text: next.question ?? "", key: next.questionKey });
+    turns.push({ role: "assistant", text: next.question ?? "", key: next.questionKey, ...("final" in next && next.final ? { final: true } : {}) });
     await q(`update problems set intake = $2::jsonb where id = $1`, [problemId, J(turns)]);
-    return "chat";
+    return { step: "chat", ...("busy" in next && next.busy ? { aiBusy: true } : {}) };
   }
-  await finishDraft(problemId, transcript, business, parts);
-  return "review";
+  await finishDraft(problemId, transcript, business, hasFile ? await fileParts(p!.raw_input ?? {}) : []);
+  return { step: "review" };
 }
 
 async function finishDraft(problemId: string, transcript: ChatTurn[], business: { name: string; sector: string; city: string }, parts: Part[]) {
@@ -80,6 +94,8 @@ export async function startProblem(_: FormState, form: FormData): Promise<FormSt
     }
   }
   if (text.length < 5 && !file) return { error: "pc.err_empty" };
+  // Double tap: the same problem sent twice within a minute creates one draft (and one AI call).
+  if (!(await tryLock(`pstart:${user.id}:${shortHash(text + (file?.name ?? ""))}`, 60))) return {};
   const t = await getT();
   const firstTurn = text || t("pc.file_only_turn", { name: file!.name });
   const raw = {
@@ -92,7 +108,7 @@ export async function startProblem(_: FormState, form: FormData): Promise<FormSt
     `insert into problems (business_id, raw_input, intake, status) values ($1,$2::jsonb,$3::jsonb,'draft') returning id`,
     [user.id, J(raw), J([{ role: "user", text: firstTurn }])],
   );
-  const step = await nextStep(row!.id);
+  const { step } = await nextStep(row!.id);
   redirect(step === "chat" ? `/business/problems/new?draft=${row!.id}` : `/business/problems/${row!.id}/review`);
 }
 
@@ -110,16 +126,20 @@ export async function answerIntake(prev: FormState, form: FormData): Promise<For
   const text = skip ? "—" : String(form.get("text") ?? "").trim();
   if (!text) return { error: "pc.err_answer" };
   const turns = [...(p.intake ?? []), { role: "user", text }];
+  // The same answer sent twice (double tap, resent form) is handled once.
+  if (!(await tryLock(`pintake:${id}:${turns.length}:${shortHash(text)}`, 45))) return { ok: true, n: prev.n ?? 0 };
   await q(`update problems set intake = $2::jsonb where id = $1`, [id, J(turns)]);
-  const step = await nextStep(id);
+  const { step, aiBusy } = await nextStep(id);
   if (step === "review") redirect(`/business/problems/${id}/review`);
   revalidatePath("/business/problems/new");
-  return { ok: true, n: (prev.n ?? 0) + 1 };
+  return { ok: true, n: (prev.n ?? 0) + 1, ...(aiBusy ? { aiBusy: true } : {}) };
 }
 
 export async function finishIntakeNow(form: FormData) {
   const id = String(form.get("problemId"));
   const p = await ownDraft(id);
+  // One draft call per tap: a second tap within a minute just opens the review page.
+  if (!(await tryLock(`pdraft:${id}`, 60))) redirect(`/business/problems/${id}/review`);
   const { profile } = await requireBusiness();
   await finishDraft(id, await textTranscript(p.intake ?? []), { name: profile.business_name, sector: profile.sector, city: profile.city }, await fileParts(p.raw_input ?? {}));
   redirect(`/business/problems/${id}/review`);

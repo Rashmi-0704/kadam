@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { KadamScene, type SceneFocus } from "@/components/scene/KadamScene";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { LogoMark } from "@/components/Logo";
+import { LockUp } from "@/components/Logo";
+import { RoleTrail } from "@/components/motion/RoleTrail";
 
 type Text = Record<
   "tagline" | "home" | "who" | "whoSub" | "studentTitle" | "studentSub" | "studentGo" | "businessTitle" | "businessSub" | "businessGo" | "login" | "open" | "note",
@@ -24,20 +25,20 @@ function Door({ href, title, sub, go, icon, onFocus, tone }: { href: string; tit
       onPointerLeave={() => onFocus(false)}
       onFocus={() => onFocus(true)}
       onBlur={() => onFocus(false)}
-      className={`door group relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] border-2 active:translate-y-1 active:shadow-none p-6 text-center transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 sm:min-h-[340px] sm:justify-center sm:gap-5 sm:p-8 ${
+      className={`door group relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] border-2 p-6 text-center transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 sm:min-h-[340px] sm:justify-center sm:gap-5 sm:p-8 ${
         student
-          ? "border-saffron bg-saffron text-ink shadow-[0_6px_0_#c2740b] hover:bg-[#f7aa3a]"
-          : "border-paper bg-paper text-ink shadow-[0_6px_0_#d4c7b0] hover:bg-white"
+          ? "glow-card border-primary-edge bg-primary text-white shadow-[0_6px_0_var(--color-primary-edge)] hover:bg-[#4f46e5]"
+          : "glow-card border-line-deep bg-card text-ink shadow-[0_6px_0_var(--color-line-deep)] hover:border-primary"
       }`}
     >
-      <span className={`inline-flex h-20 w-20 items-center justify-center rounded-3xl sm:h-24 sm:w-24 ${student ? "bg-ink text-saffron" : "bg-ink text-paper"}`}>
+      <span className={`inline-flex h-20 w-20 items-center justify-center rounded-3xl sm:h-24 sm:w-24 ${student ? "bg-white text-primary" : "bg-highlight-soft text-highlight-deep"}`}>
         <svg viewBox="0 0 24 24" className="h-10 w-10 sm:h-12 sm:w-12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icon}</svg>
       </span>
       <span>
         <span className="block font-display text-2xl leading-tight font-extrabold sm:text-3xl">{title}</span>
-        <span className="mx-auto mt-2 block max-w-xs text-base text-ink/75">{sub}</span>
+        <span className={`mx-auto mt-2 block max-w-xs text-base ${student ? "text-white/90" : "text-ink-2"}`}>{sub}</span>
       </span>
-      <span className="mt-1 inline-flex min-h-12 items-center gap-2 rounded-full bg-ink px-6 text-base font-bold text-paper transition group-hover:gap-3">
+      <span className={`mt-1 inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-base font-bold transition group-hover:gap-3 ${student ? "bg-white text-primary-deep" : "bg-primary text-white"}`}>
         {go} <span aria-hidden="true">→</span>
       </span>
     </Link>
@@ -46,11 +47,6 @@ function Door({ href, title, sub, go, icon, onFocus, tone }: { href: string; tit
 
 export function Welcome({ text, home }: { text: Text; home: string | null }) {
   const [focus, setFocus] = useState<SceneFocus>("both");
-  // A sign-in link that lands on the homepage (Supabase's default address) is passed on to the sign-in handler.
-  useEffect(() => {
-    const h = window.location.hash;
-    if (/access_token=|error_description=/.test(h)) window.location.replace(`/auth/callback${window.location.search}${h}`);
-  }, []);
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(
     () => {
@@ -66,28 +62,26 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
     { scope: ref },
   );
   return (
-    <div ref={ref} className="relative min-h-dvh overflow-hidden bg-[#120f1d] text-paper">
+    <div ref={ref} className="relative min-h-dvh overflow-hidden bg-canvas text-ink">
       {/* Background scene, kept behind the choice */}
-      <div className="absolute inset-0 opacity-50"><KadamScene focus={focus} /></div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#120f1d]/95 via-[#120f1d]/75 to-[#120f1d]/60" aria-hidden="true" />
+      <div className="absolute inset-0 opacity-60"><KadamScene focus={focus} /></div>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas/95 via-canvas/80 to-canvas/40" aria-hidden="true" />
+      <RoleTrail />
 
       <div className="relative z-10 flex min-h-dvh flex-col">
         <header className="mx-auto flex h-16 w-full max-w-5xl items-center gap-2 px-4">
-          <Link href="/" className="inline-flex items-center gap-2" aria-label="Kadam">
-            <LogoMark className="h-8 w-8" />
-            <span className="font-display text-xl font-bold">Kadam</span>
-          </Link>
+          <Link href="/" aria-label="Kadam home"><LockUp tagline={text.tagline} /></Link>
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle compact />
-            <Link href={home ?? "/auth"} className="btn btn-sm whitespace-nowrap border border-white/30 text-paper hover:bg-white/10">{home ? <><span className="sm:hidden">{text.home}</span><span className="hidden sm:inline">{text.open}</span></> : text.login}</Link>
+            <Link href={home ?? "/auth"} className="btn-secondary btn-sm whitespace-nowrap">{home ? <><span className="sm:hidden">{text.home}</span><span className="hidden sm:inline">{text.open}</span></> : text.login}</Link>
           </div>
         </header>
 
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pt-4 pb-10">
           <div className="text-center">
-            <p className="w-fade eyebrow text-saffron">{text.tagline}</p>
+            
             <h1 className="w-fade mt-3 text-[40px] leading-none font-extrabold tracking-tight sm:text-[64px]">{text.who}</h1>
-            <p className="w-fade mx-auto mt-3 max-w-md text-lg text-paper/75">{text.whoSub}</p>
+            <p className="w-fade mx-auto mt-3 max-w-md text-lg text-ink-2">{text.whoSub}</p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-6">
@@ -95,7 +89,7 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
             <Door href="/start/business" tone="business" title={text.businessTitle} sub={text.businessSub} go={text.businessGo} icon={BUSINESS_ICON} onFocus={(on) => setFocus(on ? "business" : "both")} />
           </div>
 
-          <p className="w-fade mt-8 text-center text-sm text-paper/55">{text.note}</p>
+          <p className="w-fade mt-8 text-center text-sm text-ink-3">{text.note}</p>
         </main>
       </div>
     </div>

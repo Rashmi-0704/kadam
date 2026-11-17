@@ -11,7 +11,7 @@ export function TakeUpButton({ problemId }: { problemId: string }) {
     <form action={action} className="space-y-2">
       <input type="hidden" name="problemId" value={problemId} />
       <SubmitButton className="btn-accent w-full" pendingLabel={t("common.saving")}>{t("problem.take_up")}</SubmitButton>
-      {state.error && <p className="text-sm font-semibold text-clay" role="alert">{t(state.error)}</p>}
+      {state.error && <p className="text-sm font-semibold text-alert" role="alert">{t(state.error)}</p>}
     </form>
   );
 }

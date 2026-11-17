@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
-import { sendOtp, verifyOtp, chooseRole, type AuthState } from "@/app/actions/auth";
+import { signIn, signUp, chooseRole, type AuthState } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
 import { useT } from "@/lib/i18n/client";
 
@@ -21,8 +21,8 @@ function RolePicker({ onPick }: { onPick: (r: Role) => void }) {
       </div>
       <div className="grid gap-3">
         {(["student", "business"] as const).map((r) => (
-          <button key={r} type="button" onClick={() => onPick(r)} className="group flex items-center gap-4 rounded-2xl border-2 border-line bg-card p-4 text-left transition hover:border-ink hover:bg-sand">
-            <span className={`inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${r === "student" ? "bg-saffron text-ink" : "bg-ink text-paper"}`}>
+          <button key={r} type="button" onClick={() => onPick(r)} className="group flex items-center gap-4 rounded-2xl border-2 border-line bg-card p-4 text-left transition hover:border-ink hover:bg-mist">
+            <span className={`inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${r === "student" ? "bg-primary text-white" : "bg-highlight-soft text-highlight-deep"}`}>
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON[r]}</svg>
             </span>
             <span className="min-w-0 flex-1">
@@ -40,7 +40,7 @@ function RolePicker({ onPick }: { onPick: (r: Role) => void }) {
 function RoleBadge({ role, onChange }: { role: Role; onChange: () => void }) {
   const t = useT();
   return (
-    <div className="mb-5 flex items-center justify-between gap-2 rounded-xl bg-sand px-3 py-2">
+    <div className="mb-5 flex items-center justify-between gap-2 rounded-xl bg-mist px-3 py-2">
       <span className="inline-flex items-center gap-2 text-sm font-semibold">
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON[role]}</svg>
         {t(`auth.role_${role}`)}
@@ -52,20 +52,22 @@ function RoleBadge({ role, onChange }: { role: Role; onChange: () => void }) {
 
 export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialStep: "email" | "role"; defaultRole?: Role; demo?: boolean }) {
   const t = useT();
-  const [sendState, sendAction] = useActionState<AuthState, FormData>(sendOtp, {});
-  const [verifyState, verifyAction] = useActionState<AuthState, FormData>(verifyOtp, {});
+  const [inState, inAction] = useActionState<AuthState, FormData>(signIn, {});
+  const [upState, upAction] = useActionState<AuthState, FormData>(signUp, {});
   const [roleState, roleAction] = useActionState<AuthState, FormData>(chooseRole, {});
-  const [editingEmail, setEditingEmail] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [role, setRole] = useState<Role | undefined>(defaultRole);
+  const [show, setShow] = useState(false);
 
-  const signedIn = initialStep === "role" || verifyState.step === "role";
-  const step: "email" | "code" | "details" = signedIn ? "details" : sendState.step === "code" && !editingEmail ? "code" : "email";
-  const email = verifyState.email ?? sendState.email ?? "";
+  const signedIn = initialStep === "role" || inState.step === "role" || upState.step === "role";
+  const state = mode === "signin" ? inState : upState;
+  // "That email already has an account" switches to sign-in with the email kept.
+  const email = state.email ?? (mode === "signin" ? upState.email : inState.email) ?? "";
 
   // Step 1 is always "who are you?" until a role is picked.
-  if (!role) return <RolePicker onPick={(r) => { setRole(r); if (r === "student") document.cookie = "kadam_audience=student; path=/; max-age=15552000"; else document.cookie = "kadam_audience=business; path=/; max-age=15552000"; }} />;
+  if (!role) return <RolePicker onPick={(r) => { setRole(r); document.cookie = `kadam_audience=${r}; path=/; max-age=15552000`; }} />;
 
-  if (step === "details")
+  if (signedIn)
     return (
       <form action={roleAction} className="space-y-5">
         <RoleBadge role={role} onChange={() => setRole(undefined)} />
@@ -79,64 +81,57 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
           <input id="name" name="name" className="input" autoComplete="name" required minLength={2} autoFocus />
         </div>
         <label className="flex items-start gap-3 text-sm text-ink-2">
-          <input type="checkbox" name="consent" className="mt-0.5 h-5 w-5 shrink-0 accent-ink" required />
+          <input type="checkbox" name="consent" className="mt-0.5 h-5 w-5 shrink-0 accent-primary" required />
           <span>{t("auth.consent")}</span>
         </label>
-        {roleState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(roleState.error)}</p>}
+        {roleState.error && <p className="text-sm font-semibold text-alert" role="alert">{t(roleState.error)}</p>}
         <SubmitButton className="btn-primary w-full">{t("common.continue")}</SubmitButton>
       </form>
     );
 
-  if (step === "code")
-    return (
-      <form action={verifyAction} className="space-y-5">
-        <RoleBadge role={role} onChange={() => setRole(undefined)} />
-        <div>
-          <h1 className="text-2xl font-bold">{t("auth.code_title")}</h1>
-          <p className="mt-1 text-ink-2">{t("auth.code_sent", { email })}</p>
-        </div>
-        <ol className="space-y-3 rounded-2xl bg-saffron-soft p-4">
-          {["auth.link_step1", "auth.link_step2", "auth.link_step3"].map((k, i) => (
-            <li key={k} className="flex gap-3">
-              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-paper">{i + 1}</span>
-              <span className="pt-0.5 font-medium">{t(k)}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="text-sm text-ink-3">{t("auth.link_spam")}</p>
-        <input type="hidden" name="email" value={email} />
-        <details className="rounded-xl border border-line p-3" open={Boolean(verifyState.error)}>
-          <summary className="cursor-pointer text-sm font-semibold text-ink-2">{t("auth.have_code")}</summary>
-          <div className="mt-3 space-y-3">
-            <label className="label" htmlFor="code">{t("auth.code_label")}</label>
-            <input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6}
-              className="input text-center font-display text-3xl font-bold tracking-[0.5em]" placeholder="••••••" />
-            {verifyState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(verifyState.error)}</p>}
-            <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.verify")}</SubmitButton>
-          </div>
-        </details>
-        <button type="button" className="btn-ghost w-full" onClick={() => setEditingEmail(true)}>{t("auth.change_email")}</button>
-      </form>
-    );
-
+  const switchTo = (m: "signin" | "signup") => setMode(m);
   return (
-    <form action={(fd) => { setEditingEmail(false); sendAction(fd); }} className="space-y-5">
+    <form key={mode} action={mode === "signin" ? inAction : upAction} className="space-y-5">
       <RoleBadge role={role} onChange={() => setRole(undefined)} />
-      <input type="hidden" name="role" value={role} />
+      <div role="tablist" aria-label={t("auth.title")} className="grid grid-cols-2 gap-1 rounded-2xl bg-mist p-1">
+        {(["signup", "signin"] as const).map((m) => (
+          <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => switchTo(m)}
+            className={`min-h-11 rounded-xl text-sm font-bold transition ${mode === m ? "bg-card text-primary-deep shadow-[0_2px_0_var(--color-line-deep)]" : "text-ink-2 hover:text-ink"}`}>
+            {t(m === "signup" ? "auth.tab_signup" : "auth.tab_signin")}
+          </button>
+        ))}
+      </div>
       <div>
-        <h1 className="text-2xl font-bold">{t("auth.title")}</h1>
-        <p className="mt-1 text-ink-2">{t("auth.sub")}</p>
+        <h1 className="text-2xl font-bold">{t(mode === "signup" ? "auth.signup_title" : "auth.signin_title")}</h1>
+        <p className="mt-1 text-ink-2">{t(mode === "signup" ? "auth.signup_sub" : "auth.signin_sub")}</p>
       </div>
       <div>
         <label className="label" htmlFor="email">{t("auth.email")}</label>
         <input id="email" name="email" type="email" inputMode="email" autoComplete="email" required className="input" defaultValue={email} placeholder={role === "student" ? "name@college.ac.in" : "name@gmail.com"} autoFocus />
-        {role === "student" && <p className="mt-2 text-xs text-ink-3">{t("auth.email_hint")}</p>}
       </div>
-      {sendState.error && <p className="text-sm font-semibold text-clay" role="alert">{t(sendState.error)}</p>}
-      {demo && (sendState.error === "err.otp_rate" || sendState.error === "err.otp_send") && (
+      <div>
+        <label className="label" htmlFor="password">{t("auth.password")}</label>
+        <div className="relative">
+          <input id="password" name="password" type={show ? "text" : "password"} required minLength={mode === "signup" ? 8 : 1}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"} className="input pr-20" />
+          <button type="button" onClick={() => setShow((s) => !s)} className="absolute inset-y-0 right-2 my-auto h-9 rounded-lg px-3 text-sm font-semibold text-primary-deep hover:bg-primary-soft">
+            {t(show ? "auth.hide" : "auth.show")}
+          </button>
+        </div>
+        {mode === "signup" && <p className="mt-2 text-xs text-ink-3">{t("auth.password_hint")}</p>}
+      </div>
+      {state.error && (
+        <div className="rounded-xl border-2 border-alert/30 bg-alert-soft p-3 text-sm font-semibold text-alert" role="alert">
+          {t(state.error)}
+          {state.error === "err.account_exists" && (
+            <button type="button" onClick={() => switchTo("signin")} className="mt-2 block font-bold text-primary-deep underline underline-offset-2">{t("auth.tab_signin")} →</button>
+          )}
+        </div>
+      )}
+      {demo && (state.error === "err.auth_unavailable" || state.error === "err.auth_busy") && (
         <a href="/demo" className="btn-secondary w-full">{t("auth.try_demo")}</a>
       )}
-      <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.sending")}>{t("auth.send_code")}</SubmitButton>
+      <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t(mode === "signup" ? "auth.create" : "auth.signin_btn")}</SubmitButton>
     </form>
   );
 }

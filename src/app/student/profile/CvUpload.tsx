@@ -22,7 +22,7 @@ export function CvUpload() {
           <button type="button" className="text-sm font-semibold text-ink-2 underline underline-offset-2" onClick={() => setPaste(true)}>{t("profile.paste_instead")}</button>
         )}
       </div>
-      {state.error && <p className="text-sm font-semibold text-clay" role="alert">{t(state.error)}</p>}
+      {state.error && <p className="text-sm font-semibold text-alert" role="alert">{t(state.error)}</p>}
       <SubmitButton className="btn-primary w-full" pendingLabel={t("profile.reading")}>{t("profile.cv_continue")}</SubmitButton>
       <p className="text-center text-sm text-ink-3">{t("profile.cv_privacy")}</p>
     </form>

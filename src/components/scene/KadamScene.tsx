@@ -22,12 +22,12 @@ const STEPS = Array.from({ length: 7 }, (_, i) => ({ x: STEP_X0 + i * STEP_W, h:
 
 type Shop = { x: number; w: number; h: number; awning: string; sign: string; label: string; windows: number };
 const SHOPS: Shop[] = [
-  { x: 28, w: 180, h: 196, awning: "#f5a025", sign: "#fbf7f0", label: "KIRANA", windows: 2 },
-  { x: 222, w: 150, h: 160, awning: "#2b7a57", sign: "#fbf7f0", label: "TIFFIN", windows: 1 },
-  { x: 384, w: 112, h: 118, awning: "#b4432c", sign: "#fbf7f0", label: "CHAI", windows: 1 },
-  { x: 958, w: 176, h: 206, awning: "#3c418f", sign: "#fbf7f0", label: "HANDLOOM", windows: 2 },
-  { x: 1148, w: 138, h: 168, awning: "#2b7a57", sign: "#fbf7f0", label: "NGO", windows: 1 },
-  { x: 1298, w: 136, h: 186, awning: "#f5a025", sign: "#fbf7f0", label: "TUITION", windows: 2 },
+  { x: 28, w: 180, h: 196, awning: "#4338ca", sign: "#eef0ff", label: "KIRANA", windows: 2 },
+  { x: 222, w: 150, h: 160, awning: "#16a34a", sign: "#eef0ff", label: "TIFFIN", windows: 1 },
+  { x: 384, w: 112, h: 118, awning: "#ff6b4a", sign: "#eef0ff", label: "CHAI", windows: 1 },
+  { x: 958, w: 176, h: 206, awning: "#818cf8", sign: "#eef0ff", label: "HANDLOOM", windows: 2 },
+  { x: 1148, w: 138, h: 168, awning: "#16a34a", sign: "#eef0ff", label: "NGO", windows: 1 },
+  { x: 1298, w: 136, h: 186, awning: "#ff6b4a", sign: "#eef0ff", label: "TUITION", windows: 2 },
 ];
 
 const TOWERS = [
@@ -37,12 +37,12 @@ const TOWERS = [
   { x: 1250, w: 76, h: 360 }, { x: 1340, w: 64, h: 290 },
 ];
 
+// Floating role tags (at most 4, so the hero stays calm next to the cursor role trail).
 const CHIPS = [
-  { x: 1170, y: 120, w: 176, text: "Data Analyst", dot: "#f5a025" },
-  { x: 1010, y: 230, w: 158, text: "In use ✓", dot: "#2b7a57" },
-  { x: 540, y: 330, w: 214, text: "Subscribers 38 → 81", dot: "#3c418f" },
-  { x: 1080, y: 400, w: 168, text: "+₹36k / month", dot: "#f5a025" },
-  { x: 640, y: 150, w: 200, text: "Resume-ready report", dot: "#b4432c" },
+  { x: 1160, y: 120, w: 170, text: "Data Analyst", dot: "#4338ca", tilt: -5 },
+  { x: 990, y: 250, w: 168, text: "UX Designer", dot: "#ff6b4a", tilt: 4 },
+  { x: 560, y: 330, w: 180, text: "Content Writer", dot: "#16a34a", tilt: -3 },
+  { x: 680, y: 150, w: 158, text: "Operations", dot: "#818cf8", tilt: 6 },
 ];
 
 function awningPath(x: number, y: number, w: number) {
@@ -77,16 +77,18 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
             .from(".k-student", { opacity: 0, y: 30, duration: 0.6 }, 1.5);
         }
         // Problems flowing from shops to the student.
-        gsap.to(".k-link", { strokeDashoffset: -280, duration: 6, ease: "none", repeat: -1 });
+        const loops: gsap.core.Animation[] = [];
+        loops.push(gsap.to(".k-link", { strokeDashoffset: -280, duration: 6, ease: "none", repeat: -1 }));
         // Twinkle + window flicker.
-        gsap.to(".k-star", { opacity: 0.25, duration: 1.6, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.15, from: "random", repeat: -1, yoyo: true } });
-        gsap.to(".k-window", { opacity: 0.55, duration: 0.9, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.4, from: "random", repeat: -1, yoyo: true } });
+        loops.push(gsap.to(".k-star", { opacity: 0.25, duration: 1.6, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.15, from: "random", repeat: -1, yoyo: true } }));
+        loops.push(gsap.to(".k-window", { opacity: 0.55, duration: 0.9, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.4, from: "random", repeat: -1, yoyo: true } }));
         // Floating outcome chips.
         gsap.utils.toArray<SVGGElement>(".k-chip").forEach((el, i) => {
-          gsap.to(el, { y: i % 2 ? 14 : -14, duration: 3 + i * 0.4, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 2 });
+          loops.push(gsap.to(el, { y: i % 2 ? 14 : -14, duration: 3 + i * 0.4, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 2 }));
         });
         // The student climbs Kadam's steps, one step at a time.
         const climb = gsap.timeline({ repeat: -1, repeatDelay: 0.8, delay: intro ? 2.2 : 0.3 });
+        loops.push(climb);
         climb.set(".k-student", { x: STEPS[0].x + STEP_W / 2, y: GROUND - STEPS[0].h, opacity: 1 });
         STEPS.slice(1).forEach((s) => {
           climb.to(".k-student", { keyframes: { x: [null, s.x + STEP_W / 2 - 12, s.x + STEP_W / 2], y: [null, GROUND - s.h - 34, GROUND - s.h], easeEach: "sine.inOut" }, duration: 0.55 });
@@ -110,8 +112,11 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
           const ny = (e.clientY - r.top) / r.height - 0.5;
           qt.forEach((q) => { q.x(-nx * q.f); q.y(-ny * q.f * 0.5); });
         };
-        window.addEventListener("pointermove", onMove);
-        return () => window.removeEventListener("pointermove", onMove);
+        window.addEventListener("pointermove", onMove, { passive: true });
+        // Pause every loop while the scene is off-screen (hidden tabs are paused by the browser).
+        const io = new IntersectionObserver(([e]) => loops.forEach((l) => (e.isIntersecting ? l.resume() : l.pause())));
+        io.observe(svg);
+        return () => { window.removeEventListener("pointermove", onMove); io.disconnect(); };
       });
       mm.add("(prefers-reduced-motion: reduce)", () => {
         gsap.set(".k-student", { x: STEPS[6].x + STEP_W / 2, y: GROUND - STEPS[6].h, opacity: 1 });
@@ -137,27 +142,27 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
     <svg ref={root} viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" className={`h-full w-full ${className}`} aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id="k-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#120f1d" />
-          <stop offset="0.55" stopColor="#231c3f" />
-          <stop offset="0.85" stopColor="#4a2a45" />
-          <stop offset="1" stopColor="#7a3b2e" />
+          <stop offset="0" stopColor="#f7f8fc" />
+          <stop offset="0.55" stopColor="#eef0ff" />
+          <stop offset="0.85" stopColor="#f3eefe" />
+          <stop offset="1" stopColor="#fff1ec" />
         </linearGradient>
         <radialGradient id="k-sun" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#ffd08a" />
-          <stop offset="0.45" stopColor="#f59a2c" />
-          <stop offset="1" stopColor="#f5a025" stopOpacity="0" />
+          <stop offset="0" stopColor="#ffd9cf" />
+          <stop offset="0.45" stopColor="#ffb4a2" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#ff6b4a" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="k-glow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#f5a025" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#f5a025" stopOpacity="0" />
+          <stop offset="0" stopColor="#818cf8" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#818cf8" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="k-step" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f6a33f" />
-          <stop offset="1" stopColor="#c8650a" />
+          <stop offset="0" stopColor="#6366f1" />
+          <stop offset="1" stopColor="#4338ca" />
         </linearGradient>
         <linearGradient id="k-ground" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#1c1a27" />
-          <stop offset="1" stopColor="#0d0b14" />
+          <stop offset="0" stopColor="#e3e7f2" />
+          <stop offset="1" stopColor="#d5dbee" />
         </linearGradient>
         <filter id="k-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18" /></filter>
       </defs>
@@ -165,7 +170,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       <rect width="1440" height="900" fill="url(#k-sky)" />
       <g>
         {Array.from({ length: 46 }).map((_, i) => (
-          <circle key={i} className="k-star" cx={(i * 337) % 1440} cy={(i * 131) % 420 + 20} r={i % 5 === 0 ? 1.8 : 1.1} fill="#fbf7f0" opacity={0.8} />
+          <circle key={i} className="k-star" cx={(i * 337) % 1440} cy={(i * 131) % 420 + 20} r={i % 5 === 0 ? 1.8 : 1.1} fill="#a5b4fc" opacity={0.5} />
         ))}
       </g>
       <circle className="k-sun" cx="720" cy="560" r="260" fill="url(#k-sun)" opacity="0.85" />
@@ -174,11 +179,11 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       <g className="k-layer-far">
         {TOWERS.map((t, i) => (
           <g key={i} className="k-tower">
-            <rect x={t.x} y={GROUND - t.h} width={t.w} height={t.h} rx="4" fill="#2b2441" opacity="0.85" />
+            <rect x={t.x} y={GROUND - t.h} width={t.w} height={t.h} rx="4" fill="#dfe3f6" opacity="0.95" />
             {Array.from({ length: Math.floor(t.h / 34) }).map((_, r) =>
               Array.from({ length: Math.max(1, Math.floor(t.w / 22)) }).map((__, c) =>
                 (r * 7 + c * 3 + i) % 4 === 0 ? (
-                  <rect key={`${r}-${c}`} className="k-window" x={t.x + 8 + c * 20} y={GROUND - t.h + 14 + r * 34} width="9" height="13" rx="1.5" fill="#f6c27a" opacity="0.85" />
+                  <rect key={`${r}-${c}`} className="k-window" x={t.x + 8 + c * 20} y={GROUND - t.h + 14 + r * 34} width="9" height="13" rx="1.5" fill="#b4bdf3" opacity="0.85" />
                 ) : null,
               ),
             )}
@@ -199,7 +204,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
           const sy = GROUND - s.h - 4;
           const tx = 720;
           const ty = 470;
-          return <path key={i} className="k-link" d={`M${sx},${sy} Q${(sx + tx) / 2},${Math.min(sy, ty) - 170} ${tx},${ty}`} stroke="#f6a33f" strokeWidth="2" strokeDasharray="3 11" opacity="0.6" />;
+          return <path key={i} className="k-link" d={`M${sx},${sy} Q${(sx + tx) / 2},${Math.min(sy, ty) - 170} ${tx},${ty}`} stroke="#818cf8" strokeWidth="2.2" strokeDasharray="3 11" opacity="0.75" />;
         })}
       </g>
 
@@ -209,16 +214,16 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
           const top = GROUND - s.h;
           return (
             <g key={i} className="k-shop">
-              <rect x={s.x} y={top} width={s.w} height={s.h} rx="6" fill="#2a2638" />
-              <rect x={s.x} y={top} width={s.w} height="10" rx="4" fill="#3a3550" />
+              <rect x={s.x} y={top} width={s.w} height={s.h} rx="6" fill="#ffffff" stroke="#c8cee2" strokeWidth="2" />
+              <rect x={s.x} y={top} width={s.w} height="10" rx="4" fill="#e3e7f2" />
               <rect x={s.x + s.w / 2 - Math.min(64, s.w / 2 - 10)} y={top + 16} width={Math.min(128, s.w - 20)} height="26" rx="5" fill={s.sign} />
-              <text x={s.x + s.w / 2} y={top + 34} textAnchor="middle" fontFamily="var(--font-bricolage), system-ui, sans-serif" fontWeight="800" fontSize={s.label.length > 6 ? 12 : 14} letterSpacing="1.5" fill="#1c1a27">{s.label}</text>
+              <text x={s.x + s.w / 2} y={top + 34} textAnchor="middle" fontFamily="var(--font-nunito), system-ui, sans-serif" fontWeight="800" fontSize={s.label.length > 6 ? 12 : 14} letterSpacing="1.5" fill="#151a30">{s.label}</text>
               <path d={awningPath(s.x, top + 50, s.w)} fill={s.awning} />
               {Array.from({ length: s.windows }).map((_, w) => {
                 const ww = (s.w - 30 - (s.windows - 1) * 12) / s.windows;
-                return <rect key={w} className="k-window" x={s.x + 15 + w * (ww + 12)} y={top + 96} width={ww} height={Math.max(30, s.h - 150)} rx="4" fill="#ffcf7a" opacity="0.9" />;
+                return <rect key={w} className="k-window" x={s.x + 15 + w * (ww + 12)} y={top + 96} width={ww} height={Math.max(30, s.h - 150)} rx="4" fill="#c7d2fe" opacity="0.9" />;
               })}
-              <rect x={s.x + s.w / 2 - 16} y={GROUND - 54} width="32" height="54" rx="3" fill="#15131e" />
+              <rect x={s.x + s.w / 2 - 16} y={GROUND - 54} width="32" height="54" rx="3" fill="#c8cee2" />
             </g>
           );
         })}
@@ -228,28 +233,28 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       <g className="k-steps">
         {STEPS.map((s, i) => (
           <g key={i}>
-            <rect className="k-step" x={s.x} y={GROUND - s.h} width={STEP_W - 4} height={s.h} rx="6" fill={i === STEPS.length - 1 ? "#fbf7f0" : "url(#k-step)"} />
+            <rect className="k-step" x={s.x} y={GROUND - s.h} width={STEP_W - 4} height={s.h} rx="6" fill={i === STEPS.length - 1 ? "#ff6b4a" : "url(#k-step)"} />
             <rect x={s.x} y={GROUND - s.h} width={STEP_W - 4} height="6" rx="3" fill="#fff" opacity="0.35" />
           </g>
         ))}
         <g className="k-flag">
-          <rect x={STEPS[6].x + 24} y={GROUND - STEPS[6].h - 70} width="3" height="70" fill="#fbf7f0" />
-          <path d={`M${STEPS[6].x + 27},${GROUND - STEPS[6].h - 70} l38,12 l-38,12 z`} fill="#f5a025" />
+          <rect x={STEPS[6].x + 24} y={GROUND - STEPS[6].h - 70} width="3" height="70" fill="#4338ca" />
+          <path d={`M${STEPS[6].x + 27},${GROUND - STEPS[6].h - 70} l38,12 l-38,12 z`} fill="#ff6b4a" />
         </g>
-        <circle className="k-burst" cx={STEPS[6].x + 27} cy={GROUND - STEPS[6].h - 40} r="40" fill="none" stroke="#ffd08a" strokeWidth="3" opacity="0" />
+        <circle className="k-burst" cx={STEPS[6].x + 27} cy={GROUND - STEPS[6].h - 40} r="40" fill="none" stroke="#ff6b4a" strokeWidth="3" opacity="0" />
       </g>
 
       {/* Student */}
       <g className="k-student-wrap">
         <g className="k-student" opacity="0">
           <g className="k-student-body">
-            <ellipse cx="0" cy="0" rx="13" ry="3" fill="#000" opacity="0.25" />
-            <rect x="-7" y="-20" width="5" height="20" rx="2.5" fill="#1c1a27" />
-            <rect x="2" y="-20" width="5" height="20" rx="2.5" fill="#1c1a27" />
-            <rect x="-11" y="-46" width="22" height="30" rx="9" fill="#3c418f" />
-            <rect x="-17" y="-44" width="9" height="20" rx="4" fill="#f5a025" />
+            <ellipse cx="0" cy="0" rx="13" ry="3" fill="#151a30" opacity="0.15" />
+            <rect x="-7" y="-20" width="5" height="20" rx="2.5" fill="#151a30" />
+            <rect x="2" y="-20" width="5" height="20" rx="2.5" fill="#151a30" />
+            <rect x="-11" y="-46" width="22" height="30" rx="9" fill="#4338ca" />
+            <rect x="-17" y="-44" width="9" height="20" rx="4" fill="#ff6b4a" />
             <circle cx="0" cy="-57" r="10" fill="#c98a5a" />
-            <path d="M-10,-60 q10,-14 20,0 q-4,-5 -10,-4 q-6,-1 -10,4z" fill="#1c1a27" />
+            <path d="M-10,-60 q10,-14 20,0 q-4,-5 -10,-4 q-6,-1 -10,4z" fill="#151a30" />
           </g>
         </g>
       </g>
@@ -257,10 +262,10 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       {/* Outcome chips */}
       <g className="k-layer-chips max-md:hidden">
         {CHIPS.map((c, i) => (
-          <g key={i} className="k-chip">
-            <rect x={c.x} y={c.y} width={c.w} height="40" rx="20" fill="#fbf7f0" opacity="0.96" />
+          <g key={i} className="k-chip" transform={`rotate(${c.tilt} ${c.x + c.w / 2} ${c.y + 20})`}>
+            <rect x={c.x} y={c.y} width={c.w} height="40" rx="20" fill="#ffffff" stroke="#e3e7f2" strokeWidth="1.5" />
             <circle cx={c.x + 20} cy={c.y + 20} r="6" fill={c.dot} />
-            <text x={c.x + 34} y={c.y + 26} fontFamily="var(--font-hanken), system-ui, sans-serif" fontWeight="700" fontSize="15" fill="#1c1a27">{c.text}</text>
+            <text x={c.x + 34} y={c.y + 26} fontFamily="var(--font-nunito), system-ui, sans-serif" fontWeight="800" fontSize="15" fill="#4338ca">{c.text}</text>
           </g>
         ))}
       </g>

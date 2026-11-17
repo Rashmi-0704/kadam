@@ -4,6 +4,7 @@ import { getT } from "@/lib/i18n/server";
 import { PageTitle } from "@/components/ui";
 import { slugify, roleTitle } from "@/db/taxonomy";
 import { progressOf } from "@/lib/roadmaps";
+import { seededRoadmap } from "@/db/roadmaps-data";
 import { CATALOG, ROLE_GROUPS, SKILL_GROUPS } from "@/db/roadmap-catalog";
 import { RoadmapBrowser, type BrowserItem } from "@/components/RoadmapBrowser";
 
@@ -17,7 +18,7 @@ export default async function RoadmapsPage() {
   const pct = (slug: string) => {
     const steps = stored.get(slug);
     const st = statusRows.get(slug);
-    return steps && st ? progressOf(steps, st).pct : null;
+    return (steps || seededRoadmap(slug)) && st ? progressOf(steps, st, slug).pct : null;
   };
   const items: BrowserItem[] = CATALOG.map((c) => ({ slug: c.slug, title: c.title, kind: c.kind, group: c.group, blurb: c.blurb, pct: pct(c.slug) }));
 

@@ -56,7 +56,7 @@ export function SplitHeading({ text, accent, className = "", as: Tag = "h1", del
     <Tag ref={ref} className={className} aria-label={accent ? `${text} ${accent}` : text}>
       <span aria-hidden="true">
         {words(text)}
-        {accent && words(accent, "text-saffron")}
+        {accent && words(accent, "text-primary")}
       </span>
     </Tag>
   );
@@ -123,7 +123,7 @@ export function Marquee({ items, className = "", speed = 40 }: { items: string[]
     items.map((it, i) => (
       <span key={`${k}${i}`} className="inline-flex items-center gap-4 pr-4 whitespace-nowrap">
         <span>{it}</span>
-        <span aria-hidden="true" className="inline-flex items-end gap-0.5"><span className="h-2 w-1.5 rounded-sm bg-saffron/60" /><span className="h-3 w-1.5 rounded-sm bg-saffron/80" /><span className="h-4 w-1.5 rounded-sm bg-saffron" /></span>
+        <span aria-hidden="true" className="inline-flex items-end gap-0.5"><span className="h-2 w-1.5 rounded-sm bg-primary/60" /><span className="h-3 w-1.5 rounded-sm bg-primary/80" /><span className="h-4 w-1.5 rounded-sm bg-primary" /></span>
       </span>
     ));
   return (
@@ -148,7 +148,7 @@ export function GrowSteps({ n = 4, active = n, className = "" }: { n?: number; a
   return (
     <div ref={ref} className={`flex items-end gap-1 ${className}`} aria-hidden="true">
       {Array.from({ length: n }).map((_, i) => (
-        <span key={i} className={`gs w-3 rounded-sm ${i < active ? "bg-saffron" : "bg-sand"}`} style={{ height: 8 + i * 7 }} />
+        <span key={i} className={`gs w-3 rounded-sm ${i < active ? "bg-primary" : "bg-mist"}`} style={{ height: 8 + i * 7 }} />
       ))}
     </div>
   );

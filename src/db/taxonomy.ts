@@ -21,6 +21,8 @@ export type Categories = {
 export const ROLES: { slug: string; title: string; keywords: string[] }[] = [
   { slug: "data-analyst", title: "Data Analyst", keywords: ["excel", "sql", "python", "data", "dashboard", "analytics", "statistics", "power bi", "forecast", "report", "डेटा", "हिसाब"] },
   { slug: "software-developer", title: "Software Developer", keywords: ["java", "python", "c++", "app", "software", "backend", "api", "database", "ऐप", "सॉफ्टवेयर"] },
+  { slug: "backend-developer", title: "Backend Developer", keywords: ["backend", "api", "server", "node", "django", "database", "sql"] },
+  { slug: "full-stack-developer", title: "Full Stack Developer", keywords: ["full stack", "full-stack", "mern", "next.js", "web app", "node", "react"] },
   { slug: "frontend-developer", title: "Frontend Developer", keywords: ["html", "css", "javascript", "react", "website", "web", "frontend", "वेबसाइट"] },
   { slug: "ux-designer", title: "UX Designer", keywords: ["figma", "ux", "ui", "design", "user research", "wireframe", "prototype", "usability"] },
   { slug: "graphic-designer", title: "Graphic Designer", keywords: ["canva", "photoshop", "illustrator", "poster", "photo", "visual", "branding", "logo", "फोटो"] },
@@ -29,6 +31,8 @@ export const ROLES: { slug: string; title: string; keywords: string[] }[] = [
   { slug: "content-writer", title: "Content Writer", keywords: ["writing", "blog", "content", "copy", "story", "stories", "editing", "लेख"] },
   { slug: "journalist", title: "Journalist", keywords: ["journalism", "reporting", "news", "interview", "story", "media", "fact-check"] },
   { slug: "business-analyst", title: "Business Analyst", keywords: ["process", "requirements", "business analysis", "workflow", "stakeholder", "excel", "operations"] },
+  { slug: "sales-executive", title: "Sales & Business Development", keywords: ["sales", "business development", "leads", "crm", "pitch", "b2b", "बिक्री"] },
+  { slug: "hr-executive", title: "HR / People Operations", keywords: ["hr", "hiring", "recruitment", "people", "onboarding", "payroll", "staff"] },
   { slug: "operations-analyst", title: "Operations Analyst", keywords: ["operations", "process", "inventory", "supply", "logistics", "stock", "स्टॉक", "सामान"] },
   { slug: "financial-analyst", title: "Financial Analyst", keywords: ["finance", "accounting", "costing", "budget", "tally", "gst", "profit", "खर्च", "पैसे", "उधार"] },
   { slug: "accountant", title: "Accountant", keywords: ["tally", "accounts", "bookkeeping", "gst", "ledger", "invoice", "बही", "खाता"] },

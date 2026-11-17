@@ -4,7 +4,7 @@ import { q } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
 import { createDueReminders } from "@/lib/engagement";
 import { PageTitle, Section, EmptyState, StatusBadge, Notice } from "@/components/ui";
-import { CategoryChips, TakerCount } from "@/components/ProblemBits";
+import { CategoryChips, TakerCount, NewBadge } from "@/components/ProblemBits";
 import { InsightTiles, ICONS } from "@/components/InsightTiles";
 
 export const metadata = { title: "Dashboard" };
@@ -15,7 +15,7 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
   const sp = await searchParams;
   const due = await createDueReminders(user.id);
   const problems = await q(
-    `select p.id, p.title, p.status, p.categories, p.created_at,
+    `select p.id, p.title, p.status, p.categories, p.created_at, p.live_at,
             (select count(*)::int from engagements e where e.problem_id = p.id and e.status <> 'withdrawn') as takers,
             (select count(*)::int from engagements e where e.problem_id = p.id and e.status = 'submitted') as waiting
        from problems p where p.business_id = $1 order by (p.status = 'draft') desc, p.created_at desc`,
@@ -42,9 +42,9 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
       <InsightTiles
         items={[
           { label: t("ins.live"), value: published.filter((p) => p.status === "live").length, tone: "ink", icon: ICONS.live },
-          { label: t("ins.students"), value: published.reduce((n, p) => n + p.takers, 0), hint: t("ins.students_hint"), tone: "indigo", icon: ICONS.people },
-          { label: t("ins.waiting"), value: published.reduce((n, p) => n + p.waiting, 0), hint: t("ins.waiting_hint"), tone: "saffron", icon: ICONS.inbox },
-          { label: t("ins.solutions"), value: inUse, hint: t("ins.solutions_hint"), tone: "leaf", icon: ICONS.check },
+          { label: t("ins.students"), value: published.reduce((n, p) => n + p.takers, 0), hint: t("ins.students_hint"), tone: "info", icon: ICONS.people },
+          { label: t("ins.waiting"), value: published.reduce((n, p) => n + p.waiting, 0), hint: t("ins.waiting_hint"), tone: "primary", icon: ICONS.inbox },
+          { label: t("ins.solutions"), value: inUse, hint: t("ins.solutions_hint"), tone: "success", icon: ICONS.check },
         ]}
       />
 
@@ -53,7 +53,7 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
           <ul className="grid gap-2">
             {needsAction.map((e) => (
               <li key={e.id}>
-                <Link href={`/business/engagements/${e.id}`} className="card flex items-center justify-between gap-3 border-saffron/40 bg-saffron-soft/40 p-4 hover:border-saffron">
+                <Link href={`/business/engagements/${e.id}`} className="card flex items-center justify-between gap-3 border-primary/40 bg-primary-soft/40 p-4 hover:border-primary">
                   <span className="min-w-0">
                     <span className="block font-bold">{e.status === "submitted" ? t("bd.review_submission", { name: e.student }) : t("bd.update_due", { name: e.student })}</span>
                     <span className="block truncate text-sm text-ink-2">{e.title}</span>
@@ -86,17 +86,17 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
           <EmptyState title={t("bd.empty_title")} body={t("bd.empty_body")} action={<Link href="/business/problems/new" className="btn-primary">{t("bd.new")}</Link>} />
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
-            {published.map((p) => (
+            {published.map((p, i) => (
               <li key={p.id}>
-                <Link href={`/business/problems/${p.id}`} className="card flex h-full flex-col gap-3 p-5 hover:border-ink-3">
+                <Link href={`/business/problems/${p.id}`} className="glow-card card-tap flex h-full flex-col gap-3 p-5" style={{ "--glow-delay": `${-i * 4}s` } as React.CSSProperties}>
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-bold leading-snug">{p.title}</h3>
-                    <StatusBadge status={p.status} t={t} />
+                    <span className="flex shrink-0 items-center gap-1.5">{p.status === "live" && <NewBadge liveAt={p.live_at} t={t} />}<StatusBadge status={p.status} t={t} /></span>
                   </div>
                   <CategoryChips c={p.categories} t={t} />
                   <div className="mt-auto flex items-center justify-between">
                     <TakerCount n={p.takers} t={t} />
-                    {p.waiting > 0 && <span className="chip border-saffron/40 bg-saffron-soft text-saffron-deep">{t("bd.waiting", { n: p.waiting })}</span>}
+                    {p.waiting > 0 && <span className="chip border-primary/40 bg-primary-soft text-primary-deep">{t("bd.waiting", { n: p.waiting })}</span>}
                   </div>
                 </Link>
               </li>

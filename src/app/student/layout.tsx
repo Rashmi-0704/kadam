@@ -11,11 +11,11 @@ export default async function StudentLayout({ children }: { children: React.Reac
   return (
     <AppShell user={user}>
       {profile?.college && status !== "verified" && (
-        <div className={`no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${status === "pending" ? "border-saffron/30 bg-saffron-soft" : status === "rejected" ? "border-clay/25 bg-clay-soft" : "border-indigo/15 bg-indigo-soft"}`}>
+        <div className={`no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${status === "pending" ? "border-primary/30 bg-primary-soft" : status === "rejected" ? "border-alert/25 bg-alert-soft" : "border-info/15 bg-info-soft"}`}>
           <p className="text-sm font-medium">
             <strong className="font-bold">{t(`vb.${status}_title`)}</strong> {t(`vb.${status}_body`)}
           </p>
-          {status !== "pending" && <Link href="/student/onboarding#verify" className="btn-primary btn-sm">{t("vb.cta")}</Link>}
+          {<Link href="/student/onboarding#verify" className="btn-primary btn-sm">{t("vb.cta")}</Link>}
         </div>
       )}
       {children}

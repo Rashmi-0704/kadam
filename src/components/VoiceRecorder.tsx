@@ -116,9 +116,9 @@ export function VoiceRecorder({ serverStt, onText, size = "lg" }: { serverStt: b
         aria-label={state === "recording" ? t("voice.stop") : t("voice.start")}
         className={`relative inline-flex items-center justify-center rounded-full transition ${
           big ? "h-24 w-24" : "h-12 w-12"
-        } ${state === "recording" ? "bg-clay text-white" : "bg-saffron text-ink hover:bg-[#f7aa3a]"} disabled:opacity-60`}
+        } ${state === "recording" ? "bg-alert text-white" : "bg-primary text-white hover:bg-[#4f46e5]"} disabled:opacity-60`}
       >
-        {state === "recording" && <span className="absolute inset-0 animate-ping rounded-full bg-clay/40" aria-hidden="true" />}
+        {state === "recording" && <span className="absolute inset-0 animate-ping rounded-full bg-alert/40" aria-hidden="true" />}
         {state === "recording" ? (
           <span className={`relative rounded-md bg-white ${big ? "h-7 w-7" : "h-4 w-4"}`} />
         ) : state === "working" ? (
@@ -135,7 +135,7 @@ export function VoiceRecorder({ serverStt, onText, size = "lg" }: { serverStt: b
         </p>
       )}
       {big && interim && <p className="max-w-md text-center text-ink-2 italic">{interim}</p>}
-      {!big && state === "error" && <span className="ml-2 text-xs text-clay">{t("voice.error_short")}</span>}
+      {!big && state === "error" && <span className="ml-2 text-xs text-alert">{t("voice.error_short")}</span>}
     </div>
   );
 }

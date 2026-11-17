@@ -3,10 +3,10 @@ import type { T } from "@/lib/i18n/config";
 
 export function Notice({ kind = "info", children, className = "" }: { kind?: "info" | "error" | "success" | "warn"; children: React.ReactNode; className?: string }) {
   const styles = {
-    info: "bg-indigo-soft text-indigo border-indigo/15",
-    error: "bg-clay-soft text-clay border-clay/20",
-    success: "bg-leaf-soft text-leaf border-leaf/20",
-    warn: "bg-saffron-soft text-saffron-deep border-saffron/25",
+    info: "bg-info-soft text-info border-info/15",
+    error: "bg-alert-soft text-alert border-alert/20",
+    success: "bg-success-soft text-success-ink border-success/20",
+    warn: "bg-primary-soft text-primary-deep border-primary/25",
   }[kind];
   return <div role={kind === "error" ? "alert" : "status"} className={`rounded-xl border px-4 py-3 text-sm font-medium ${styles} ${className}`}>{children}</div>;
 }
@@ -15,9 +15,9 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
   return (
     <div className="card flex flex-col items-center gap-3 px-6 py-10 text-center">
       <svg viewBox="0 0 48 48" className="h-12 w-12" aria-hidden="true">
-        <rect x="6" y="30" width="10" height="10" rx="2" fill="#f3ece0" />
-        <rect x="19" y="22" width="10" height="18" rx="2" fill="#fcebd5" />
-        <rect x="32" y="12" width="10" height="28" rx="2" fill="#f5a025" />
+        <rect x="6" y="30" width="10" height="10" rx="2" fill="#e0e7ff" />
+        <rect x="19" y="22" width="10" height="18" rx="2" fill="#a5b4fc" />
+        <rect x="32" y="12" width="10" height="28" rx="2" fill="#ff6b4a" />
       </svg>
       <h3 className="text-lg font-bold">{title}</h3>
       {body && <p className="max-w-sm text-ink-2">{body}</p>}
@@ -29,33 +29,33 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
 export function LoadingState({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 px-1 py-6 text-ink-2" role="status">
-      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-saffron border-r-transparent" />
+      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
       {label}
     </div>
   );
 }
 
 const BADGE: Record<string, string> = {
-  taken_up: "bg-indigo-soft text-indigo",
-  in_progress: "bg-indigo-soft text-indigo",
-  submitted: "bg-saffron-soft text-saffron-deep",
-  received: "bg-saffron-soft text-saffron-deep",
-  needs_changes: "bg-saffron-soft text-saffron-deep",
-  accepted: "bg-leaf-soft text-leaf",
-  in_use: "bg-leaf text-white",
-  rejected: "bg-clay-soft text-clay",
-  withdrawn: "bg-sand text-ink-3",
-  draft: "bg-sand text-ink-2",
-  live: "bg-leaf-soft text-leaf",
-  closed: "bg-sand text-ink-3",
-  pending: "bg-saffron-soft text-saffron-deep",
-  verified: "bg-leaf-soft text-leaf",
-  not_started: "bg-sand text-ink-2",
+  taken_up: "bg-info-soft text-info",
+  in_progress: "bg-info-soft text-info",
+  submitted: "bg-primary-soft text-primary-deep",
+  received: "bg-primary-soft text-primary-deep",
+  needs_changes: "bg-primary-soft text-primary-deep",
+  accepted: "bg-success-soft text-success-ink",
+  in_use: "bg-success-ink text-white",
+  rejected: "bg-alert-soft text-alert",
+  withdrawn: "bg-mist text-ink-3",
+  draft: "bg-mist text-ink-2",
+  live: "bg-success-soft text-success-ink",
+  closed: "bg-mist text-ink-3",
+  pending: "bg-primary-soft text-primary-deep",
+  verified: "bg-success-soft text-success-ink",
+  not_started: "bg-mist text-ink-2",
 };
 
 export function StatusBadge({ status, t }: { status: string; t: T }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${BADGE[status] ?? "bg-sand text-ink-2"}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${BADGE[status] ?? "bg-mist text-ink-2"}`}>
       {status === "in_use" && <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
       {t(`status.${status}`)}
     </span>

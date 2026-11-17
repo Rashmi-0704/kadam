@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireStudent } from "@/lib/guards";
 import { getT } from "@/lib/i18n/server";
-import { liveProblems, suggestions, reasonText } from "@/lib/matching";
+import { liveProblems, suggestions } from "@/lib/matching";
+import { isNewProblem } from "@/lib/reason";
+import { Highlight } from "@/components/motion/Highlight";
 import { ProblemCard } from "@/components/ProblemBits";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState, Notice, PageTitle } from "@/components/ui";
@@ -11,7 +13,7 @@ export const maxDuration = 60;
 
 export const metadata = { title: "Problems" };
 
-type SP = { tab?: string; sector?: string; type?: string; difficulty?: string; time?: string; mode?: string; q?: string; approved?: string };
+type SP = { tab?: string; new?: string; sector?: string; type?: string; difficulty?: string; time?: string; mode?: string; q?: string; approved?: string };
 
 export default async function ProblemsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
@@ -24,6 +26,7 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
 
   let list = all.filter((p) => {
     const c = p.categories ?? {};
+    if (sp.new && !isNewProblem(p.live_at)) return false;
     if (sp.sector && c.sector !== sp.sector) return false;
     if (sp.type && c.problem_type !== sp.type) return false;
     if (sp.difficulty && c.difficulty !== sp.difficulty) return false;
@@ -49,24 +52,41 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
       {sp.approved && <Notice kind="success" className="mb-5">{t("problems.approved")}</Notice>}
       <div className="mb-4 inline-flex rounded-full border border-line bg-card p-1" role="tablist">
         {(["suggested", "all"] as const).map((id) => (
-          <Link key={id} href={tabLink(id)} role="tab" aria-selected={tab === id} className={`inline-flex min-h-10 items-center rounded-full px-5 text-sm font-semibold ${tab === id ? "bg-ink text-paper" : "text-ink-2"}`}>
-            {id === "suggested" ? <><span aria-hidden="true" className="mr-1.5 text-saffron">✦</span>{t("problems.suggested")}</> : t("problems.all", { n: all.length })}
+          <Link key={id} href={tabLink(id)} role="tab" aria-selected={tab === id} className={`inline-flex min-h-10 items-center rounded-full px-5 text-sm font-semibold ${tab === id ? "bg-primary text-white" : "text-ink-2"}`}>
+            {id === "suggested" ? <><span aria-hidden="true" className={`mr-1.5 ${tab === id ? "text-highlight-soft" : "text-highlight-deep"}`}>✦</span>{t("problems.suggested")}</> : t("problems.all", { n: all.length })}
           </Link>
         ))}
       </div>
       <FilterBar />
+      {(() => {
+        const params = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "new" && k !== "approved") as [string, string][]);
+        if (!sp.new) params.set("new", "1");
+        const n = all.filter((p) => isNewProblem(p.live_at)).length;
+        return (
+          <div className="mb-4 -mt-1">
+            <Link href={`/student/problems?${params}`} aria-pressed={Boolean(sp.new)} className={`inline-flex min-h-10 items-center gap-2 rounded-full border-2 px-4 text-sm font-bold transition ${sp.new ? "border-highlight bg-highlight-soft text-highlight-deep" : "border-line bg-card text-ink-2 hover:border-highlight"}`}>
+              <span className="pulse-dot" style={{ "--dot": "var(--color-highlight)" } as React.CSSProperties} aria-hidden="true" />
+              {t("filter.new_week")} <span className="rounded-full bg-card px-1.5 text-xs">{n}</span>
+              {sp.new && <span aria-hidden="true">×</span>}
+            </Link>
+          </div>
+        );
+      })()}
       {tab === "suggested" && !approved ? (
         <EmptyState title={t("problems.need_profile")} body={t("problems.need_profile_body")} action={<Link href="/student/profile" className="btn-primary">{t("problems.build_profile")}</Link>} />
       ) : list.length === 0 ? (
         <EmptyState title={t("problems.none")} body={t("problems.none_body")} />
       ) : (
+        <>
+        {tab === "suggested" && <p className="mb-3 font-display text-2xl font-extrabold"><Highlight>{t("problems.suggested")}</Highlight></p>}
         <ul className="grid gap-3 md:grid-cols-2">
-          {list.map((p) => (
+          {list.map((p, i) => (
             <li key={p.id}>
-              <ProblemCard p={p} t={t} href={`/student/problems/${p.id}`} fit={tab === "suggested" ? reasonText(matches.get(p.id)?.reason ?? "", t) : null} />
+              <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={tab === "suggested" ? matches.get(p.id)?.reason ?? null : null} />
             </li>
           ))}
         </ul>
+        </>
       )}
     </div>
   );

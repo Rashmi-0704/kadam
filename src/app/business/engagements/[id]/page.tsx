@@ -56,7 +56,7 @@ export default async function BusinessWorkspace({ params }: { params: Promise<{ 
             </section>
           )}
           {ws.sub && (
-            <section className={`card p-5 ${e.status === "submitted" ? "border-saffron ring-2 ring-saffron/30" : ""}`}>
+            <section className={`card p-5 ${e.status === "submitted" ? "border-primary ring-2 ring-primary/30" : ""}`}>
               <h2 className="mb-3 font-bold">{t("sub.from", { name: e.student_name })}</h2>
               <SubmissionView sub={ws.sub} files={ws.subFiles} t={t} lang={lang} />
               {e.status === "submitted" && (

@@ -15,7 +15,7 @@ Final version · 15 Nov 2026
 
 ## 2. Name
 
-**Kadam** (Hindi for "step"). Tagline: **"Real Problems, Real Impact, Real Careers."**
+**Kadam** (Hindi for "step"). Tagline: **"Take your first step."** Name and tagline read as one line: **"Kadam. Take your first step."** (Replaced "Real Problems, Real Impact, Real Careers" in round 2.)
 Don't use the old placeholder name, "CampusCode."
 
 ## 3. The problem (student-first)

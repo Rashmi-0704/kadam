@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { q, one, type Row } from "@/lib/db";
-import { loadEngagement, canSee, reportNeedsRetry } from "@/lib/engagement";
+import { loadEngagement, canSee, reportState } from "@/lib/engagement";
+import { ReportUpdating } from "./AiBusyNotice";
 import { fileUrl, type StoredFile } from "@/lib/storage";
 import type { User } from "@/lib/session";
 import type { T } from "@/lib/i18n/config";
@@ -16,9 +17,10 @@ export async function loadWorkspace(id: string, user: User) {
   const history = await q(`select status, reason, created_at from status_changes where engagement_id = $1 order by created_at desc`, [id]);
   const updates = await q(`select * from impact_updates where engagement_id = $1 order by created_at desc`, [id]);
   const feedback = await q(`select * from feedback where engagement_id = $1 order by created_at desc`, [id]);
+  // reportState also starts a due regeneration (after the response) — see the coalescing note in lib/engagement.ts.
+  const rs = await reportState(id);
   const report = await one(`select * from impact_reports where engagement_id = $1 order by version desc limit 1`, [id]);
-  const retry = await reportNeedsRetry(id);
-  return { e, sub, subFiles, history, updates, feedback, report, retry };
+  return { e, sub, subFiles, history, updates, feedback, report, retry: rs.retry, pending: rs.pending && !rs.retry, dueInSec: rs.dueInSec };
 }
 export type WS = Awaited<ReturnType<typeof loadWorkspace>>;
 
@@ -27,13 +29,13 @@ export function SubmissionView({ sub, files, t, lang }: { sub: Row; files: { nam
     <div className="space-y-3">
       <p className="text-sm text-ink-3">
         {t("sub.submitted_on", { date: fmtDate(sub.submitted_at, lang) })}
-        {sub.receipt_confirmed_at && <> · <span className="font-semibold text-leaf">{t("sub.received_on", { date: fmtDate(sub.receipt_confirmed_at, lang) })}</span></>}
+        {sub.receipt_confirmed_at && <> · <span className="font-semibold text-success-ink">{t("sub.received_on", { date: fmtDate(sub.receipt_confirmed_at, lang) })}</span></>}
       </p>
       <p className="whitespace-pre-wrap">{sub.description}</p>
       {(sub.links as string[]).length > 0 && (
         <ul className="space-y-1">
           {(sub.links as string[]).map((l) => (
-            <li key={l}><a href={l} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-sm font-semibold text-indigo underline underline-offset-2">{l}</a></li>
+            <li key={l}><a href={l} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-sm font-semibold text-info underline underline-offset-2">{l}</a></li>
           ))}
         </ul>
       )}
@@ -58,7 +60,7 @@ export function ImpactTimeline({ updates, feedback, history, t, lang }: { update
     <ol className="relative space-y-4 border-l-2 border-line pl-5">
       {items.map((it, i) => (
         <li key={i} className="relative">
-          <span className={`absolute top-1.5 -left-[27px] h-3 w-3 rounded-full border-2 border-card ${it.kind === "update" ? "bg-leaf" : it.kind === "feedback" ? "bg-saffron" : "bg-ink-3"}`} aria-hidden="true" />
+          <span className={`absolute top-1.5 -left-[27px] h-3 w-3 rounded-full border-2 border-card ${it.kind === "update" ? "bg-success-ink" : it.kind === "feedback" ? "bg-primary" : "bg-ink-3"}`} aria-hidden="true" />
           <p className="text-xs text-ink-3">{fmtDate(it.at, lang)}</p>
           {it.kind === "update" && (
             <div className="mt-1 rounded-xl border border-line bg-card p-3">
@@ -90,11 +92,12 @@ export function ReportTeaser({ ws, t, lang, isStudent }: { ws: WS; t: T; lang: s
   const r = ws.report;
   return (
     <div className="card overflow-hidden">
-      <div className="bg-ink px-5 py-4 text-paper">
-        <p className="eyebrow text-saffron">{t("report.eyebrow")}</p>
+      <div className="glow-card border-b-2 border-line bg-gradient-to-br from-primary-soft to-highlight-soft px-5 py-4 text-ink">
+        <p className="eyebrow">{t("report.eyebrow")}</p>
         <p className="mt-1 font-display text-lg font-bold">{r ? t("report.version", { v: r.version, date: fmtDate(r.generated_at, lang) }) : t("report.not_yet")}</p>
       </div>
       <div className="space-y-3 p-5">
+        {ws.pending && <ReportUpdating dueInSec={ws.dueInSec} />}
         {ws.retry && <RetryReportButton engagementId={ws.e.id} />}
         {r ? (
           <>

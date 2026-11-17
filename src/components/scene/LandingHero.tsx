@@ -5,11 +5,14 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { KadamScene, type SceneFocus } from "./KadamScene";
 import { SplitHeading } from "./Motion";
-import { LogoMark } from "@/components/Logo";
+import { LockUp } from "@/components/Logo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { RoleTrail } from "@/components/motion/RoleTrail";
 
 export function LandingHero({
   focus,
+  tagline,
+  strip,
   eyebrow,
   h1,
   accent,
@@ -26,6 +29,8 @@ export function LandingHero({
   children,
 }: {
   focus: SceneFocus;
+  tagline: string;
+  strip?: { text: string; href: string };
   eyebrow: string;
   h1: string;
   accent: string;
@@ -46,44 +51,49 @@ export function LandingHero({
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".h-fade", { opacity: 0, y: 24, duration: 0.8, ease: "power3.out", stagger: 0.12, delay: 0.6 });
-        gsap.from(".h-card", { opacity: 0, y: 60, rotate: 4, duration: 1.1, ease: "power4.out", delay: 1 });
+        gsap.from(".h-fade", { opacity: 0, y: 20, duration: 0.7, ease: "power3.out", stagger: 0.1, delay: 0.4 });
+        gsap.from(".h-card", { opacity: 0, y: 40, rotate: 3, duration: 0.9, ease: "power4.out", delay: 0.7 });
         // Never leave hero text hidden if animations can't run.
-        const safety = window.setTimeout(() => gsap.set(".h-fade, .h-card, .sw", { clearProps: "all" }), 2500);
+        const safety = window.setTimeout(() => gsap.set(".h-fade, .h-card, .sw", { clearProps: "all" }), 2000);
         return () => window.clearTimeout(safety);
       });
     },
     { scope: ref },
   );
   return (
-    <section ref={ref} className="relative overflow-hidden bg-[#120f1d] text-paper">
-      <div className="absolute inset-x-0 bottom-0 h-[58%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[64%]"><KadamScene focus={focus} /></div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#120f1d] via-[#120f1d]/70 to-[#120f1d]/0 md:bg-gradient-to-r md:from-[#120f1d] md:via-[#120f1d]/80 md:to-[#120f1d]/0" aria-hidden="true" />
-      <div className="relative z-10">
-        <header className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
-          <Link href="/" className="inline-flex items-center gap-2" aria-label="Kadam">
-            <LogoMark className="h-8 w-8" />
-            <span className="font-display text-xl font-bold">Kadam</span>
-          </Link>
-          <div className="ml-auto flex items-center gap-2">
-            {showLanguage && <LanguageToggle compact />}
-            <Link href={loginHref} className="btn btn-sm whitespace-nowrap bg-paper text-ink hover:bg-saffron">{login}</Link>
-          </div>
-        </header>
-        <div className="mx-auto grid min-h-[calc(92dvh-4rem)] max-w-6xl grid-cols-1 items-start gap-10 px-4 pt-6 pb-[52vh] md:items-center md:pb-16 md:grid-cols-[1.1fr_1fr]">
-          <div>
-            <p className="h-fade eyebrow text-saffron">{eyebrow}</p>
-            <SplitHeading text={h1} accent={accent} className="mt-3 text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]" />
-            <p className="h-fade mt-5 max-w-xl text-lg text-paper/75">{sub}</p>
-            <div className="h-fade mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href={ctaHref} className="btn-accent px-8 text-base">{cta} <span aria-hidden="true">→</span></Link>
-              <a href={secondaryHref} className="btn border border-white/25 px-7 text-paper hover:bg-white/10">{secondary}</a>
+    <div ref={ref}>
+      {strip && (
+        <Link href={strip.href} className="block bg-primary-soft px-4 py-2 text-center text-sm font-bold text-primary-deep hover:bg-info-soft">
+          {strip.text}
+        </Link>
+      )}
+      <section className="relative overflow-hidden bg-canvas text-ink">
+        <div className="absolute inset-x-0 bottom-0 h-[52%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[62%]"><KadamScene focus={focus} /></div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas via-canvas/85 to-canvas/0 md:bg-gradient-to-r md:from-canvas md:from-35% md:via-canvas/40 md:via-55% md:to-canvas/0 md:to-80%" aria-hidden="true" />
+        <RoleTrail />
+        <div className="relative z-10">
+          <header className="mx-auto flex min-h-16 max-w-6xl items-center gap-2 px-4 py-2">
+            <Link href="/" aria-label="Kadam home"><LockUp tagline={tagline} /></Link>
+            <div className="ml-auto flex items-center gap-2">
+              {showLanguage && <LanguageToggle compact />}
+              <Link href={loginHref} className="btn-secondary btn-sm whitespace-nowrap">{login}</Link>
             </div>
-            <Link href={switchHref} className="h-fade mt-6 inline-block text-sm text-paper/60 underline decoration-white/30 underline-offset-4 hover:text-paper">{switchLabel}</Link>
+          </header>
+          <div className="mx-auto grid min-h-[calc(88dvh-4rem)] max-w-6xl grid-cols-1 items-start gap-10 px-4 pt-6 pb-[48vh] md:grid-cols-[1.1fr_1fr] md:items-center md:pb-16">
+            <div>
+              <p className="h-fade eyebrow">{eyebrow}</p>
+              <SplitHeading text={h1} accent={accent} className="mt-3 text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]" />
+              <p className="h-fade mt-5 max-w-xl text-lg text-ink-2">{sub}</p>
+              <div className="h-fade mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href={ctaHref} className="btn-primary px-8 text-base">{cta} <span aria-hidden="true">→</span></Link>
+                <a href={secondaryHref} className="btn-secondary px-7">{secondary}</a>
+              </div>
+              <Link href={switchHref} className="h-fade mt-6 inline-block text-sm font-semibold text-ink-2 underline decoration-line-deep underline-offset-4 hover:text-primary-deep">{switchLabel}</Link>
+            </div>
+            {children && <div className="h-card hidden md:block">{children}</div>}
           </div>
-          {children && <div className="h-card hidden md:block">{children}</div>}
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

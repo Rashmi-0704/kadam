@@ -4,7 +4,7 @@ import { requireBusiness } from "@/lib/guards";
 import { one, q } from "@/lib/db";
 import { getT, getLang } from "@/lib/i18n/server";
 import { BackLink, EmptyState, Notice, Section, StatusBadge, fmtDate } from "@/components/ui";
-import { CategoryChips, ProblemStatement, TakerCount } from "@/components/ProblemBits";
+import { CategoryChips, ProblemStatement, TakerCount, NewBadge } from "@/components/ProblemBits";
 import { setProblemOpen, deleteDraft } from "@/app/actions/business";
 import { SubmitButton } from "@/components/SubmitButton";
 import { roleTitle } from "@/db/taxonomy";
@@ -34,7 +34,7 @@ export default async function BusinessProblem({ params, searchParams }: { params
       {sp.live && <Notice kind="success" className="mb-5">{t("bp.now_live")}</Notice>}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="mb-2 flex items-center gap-2"><StatusBadge status={p.status} t={t} /><TakerCount n={takers} t={t} /></div>
+          <div className="mb-2 flex items-center gap-2"><StatusBadge status={p.status} t={t} />{p.status === "live" && <NewBadge liveAt={p.live_at} t={t} />}<TakerCount n={takers} t={t} /></div>
           <h1 className="text-2xl leading-tight font-bold sm:text-3xl">{p.title || t("bd.untitled")}</h1>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
@@ -66,7 +66,7 @@ export default async function BusinessProblem({ params, searchParams }: { params
                   <li key={e.id}>
                     <Link href={`/business/engagements/${e.id}`} className="card flex items-center justify-between gap-3 p-4 hover:border-ink-3">
                       <span className="flex min-w-0 items-center gap-3">
-                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-soft font-bold text-indigo">{String(e.name ?? "?")[0]}</span>
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-info-soft font-bold text-info">{String(e.name ?? "?")[0]}</span>
                         <span className="min-w-0">
                           <span className="block font-bold">{e.name}</span>
                           <span className="block truncate text-sm text-ink-3">{[e.course, e.college].filter(Boolean).join(" · ")}</span>

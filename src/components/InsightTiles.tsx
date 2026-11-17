@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { CountUp } from "./scene/Motion";
 
-export type Insight = { label: string; value: number; suffix?: string; hint?: string; href?: string; tone: "ink" | "saffron" | "leaf" | "indigo"; icon: React.ReactNode };
+export type Insight = { label: string; value: number; suffix?: string; hint?: string; href?: string; tone: "ink" | "primary" | "success" | "info"; icon: React.ReactNode };
 
+// Light tiles with a slow glow inside (no dark backgrounds). Text pairs meet WCAG AA.
 const TONE: Record<Insight["tone"], string> = {
-  ink: "bg-ink text-paper",
-  saffron: "bg-saffron text-ink",
-  leaf: "bg-leaf text-white",
-  indigo: "bg-indigo text-white",
+  ink: "border-line bg-card text-ink",
+  primary: "border-primary/25 bg-primary-soft text-primary-deep",
+  success: "border-success/30 bg-success-soft text-success-ink",
+  info: "border-info/25 bg-info-soft text-info",
 };
 
 /** Big, glanceable numbers at the top of a dashboard. */
 export function InsightTiles({ items }: { items: Insight[] }) {
   return (
     <ul className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {items.map((it) => {
+      {items.map((it, i) => {
         const inner = (
           <>
             <span className="pointer-events-none absolute -right-6 -bottom-8 opacity-15" aria-hidden="true">
@@ -30,10 +31,10 @@ export function InsightTiles({ items }: { items: Insight[] }) {
             {it.hint && <span className="relative mt-2 block text-xs font-medium opacity-80">{it.hint}</span>}
           </>
         );
-        const cls = `relative block h-full overflow-hidden rounded-2xl p-4 sm:p-5 ${TONE[it.tone]}`;
+        const cls = `glow-card relative block h-full rounded-2xl border-2 p-4 sm:p-5 ${TONE[it.tone]}`;
         return (
           <li key={it.label}>
-            {it.href ? <Link href={it.href} className={`${cls} transition hover:-translate-y-0.5`}>{inner}</Link> : <div className={cls}>{inner}</div>}
+            {it.href ? <Link href={it.href} className={`${cls} transition hover:-translate-y-0.5`} style={{ "--glow-delay": `${-i * 5}s` } as React.CSSProperties}>{inner}</Link> : <div className={cls} style={{ "--glow-delay": `${-i * 5}s` } as React.CSSProperties}>{inner}</div>}
           </li>
         );
       })}

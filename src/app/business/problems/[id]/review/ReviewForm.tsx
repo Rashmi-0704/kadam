@@ -69,7 +69,7 @@ export function ReviewForm({ p }: { p: P }) {
             {roleOptions.map((r) => {
               const on = roles.includes(r);
               return (
-                <label key={r} className={`inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 text-sm font-medium transition ${on ? "border-ink bg-ink text-paper" : "border-line bg-card text-ink-2"}`}>
+                <label key={r} className={`inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 text-sm font-medium transition ${on ? "border-primary bg-primary text-white" : "border-line bg-card text-ink-2"}`}>
                   <input type="checkbox" name="related_roles" value={r} checked={on} onChange={() => setRoles((x) => (on ? x.filter((y) => y !== r) : [...x, r]))} className="sr-only" />
                   {roleTitle(r)}
                 </label>
@@ -79,8 +79,8 @@ export function ReviewForm({ p }: { p: P }) {
         </fieldset>
       </section>
 
-      {state.error && <p className="text-sm font-semibold text-clay" role="alert">{t(state.error)}</p>}
-      <div className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-2xl border border-line bg-paper/95 p-3 backdrop-blur sm:flex-row md:bottom-4">
+      {state.error && <p className="text-sm font-semibold text-alert" role="alert">{t(state.error)}</p>}
+      <div className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-2xl border border-line bg-canvas/95 p-3 backdrop-blur sm:flex-row md:bottom-4">
         {p.status === "draft" ? (
           <>
             <SubmitButton className="btn-accent flex-1" name="intent" value="live" pendingLabel={t("common.saving")}>{t("review.go_live")}</SubmitButton>

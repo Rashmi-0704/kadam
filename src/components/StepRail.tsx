@@ -5,7 +5,7 @@ export function StepRail({ steps, current }: { steps: string[]; current: number 
         <li key={s} className="flex min-w-0 flex-1 items-center gap-2" aria-current={i === current ? "step" : undefined}>
           <span
             className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-              i < current ? "bg-leaf text-white" : i === current ? "bg-ink text-paper" : "bg-sand text-ink-3"
+              i < current ? "bg-success-ink text-white" : i === current ? "bg-primary text-white" : "bg-mist text-ink-3"
             }`}
           >
             {i < current ? "✓" : i + 1}

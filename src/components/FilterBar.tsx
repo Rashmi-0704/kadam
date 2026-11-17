@@ -36,7 +36,7 @@ export function FilterBar() {
           <input defaultValue={sp.get("q") ?? ""} onKeyDown={(e) => e.key === "Enter" && set("q", e.currentTarget.value.trim())} onBlur={(e) => e.currentTarget.value.trim() !== (sp.get("q") ?? "") && set("q", e.currentTarget.value.trim())} placeholder={t("filter.search_ph")} className="input pl-10" type="search" />
         </label>
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`btn-secondary shrink-0 ${active ? "border-ink" : ""}`}>
-          {t("filter.filters")}{active > 0 && <span className="rounded-full bg-saffron px-1.5 text-xs font-bold">{active}</span>}
+          {t("filter.filters")}{active > 0 && <span className="rounded-full bg-primary px-1.5 text-xs font-bold text-white">{active}</span>}
         </button>
       </div>
       {open && (
@@ -55,7 +55,7 @@ export function FilterBar() {
       {active > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {FILTERS.filter((f) => sp.get(f.key)).map((f) => (
-            <button key={f.key} type="button" onClick={() => set(f.key, "")} className="chip min-h-8 border-ink bg-ink text-paper">
+            <button key={f.key} type="button" onClick={() => set(f.key, "")} className="chip min-h-8 border-primary bg-primary text-white">
               {t(`${f.prefix}.${sp.get(f.key)}`)} <span aria-hidden="true">✕</span><span className="sr-only">{t("filter.remove")}</span>
             </button>
           ))}

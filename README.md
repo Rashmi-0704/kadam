@@ -1,6 +1,6 @@
 # Kadam
 
-**Real Problems, Real Impact, Real Careers.** College students solve real problems for small businesses and NGOs, and Kadam turns the outcome into an impact report they can put on a resume.
+**Kadam. Take your first step.** College students solve real problems for small businesses and NGOs, and Kadam turns the outcome into an impact report they can put on a resume.
 
 - Live: https://kadam-virid.vercel.app
 - Quick sign-in for the demo: https://kadam-virid.vercel.app/demo (only when `DEMO_MODE=true`)

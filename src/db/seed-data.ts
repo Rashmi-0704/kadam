@@ -166,7 +166,7 @@ export async function seed(q: Q, put: Put) {
       cat: { sector: "food", problem_type: "marketing", skills: ["Instagram", "Canva", "WhatsApp Business", "Customer interviews"], difficulty: "intermediate", time_needed: "m1_2", work_mode: "hybrid", city: "Bengaluru", related_roles: ["digital-marketer", "social-media-manager", "business-analyst"] },
     },
     {
-      n: 3, biz: IDS.annapurna, daysAgo: 9,
+      n: 3, biz: IDS.annapurna, daysAgo: 1,
       title: "Cut food waste by forecasting daily tiffin orders",
       background: "Annapurna cooks fresh every morning for subscribers and walk-in orders.",
       current: "The cook guesses quantities each day from experience.",

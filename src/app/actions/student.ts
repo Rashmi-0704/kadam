@@ -1,23 +1,22 @@
 "use server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { q, one, J } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { requireStudent } from "@/lib/guards";
-import { hasSupabaseAuth } from "@/lib/env";
-import { authClient } from "@/lib/supabase";
-import { isAcademicEmail, ROLES, slugify, roleTitle } from "@/db/taxonomy";
+import { ROLES, slugify, roleTitle } from "@/db/taxonomy";
 import { saveUpload } from "@/lib/storage";
 import { notify } from "@/lib/notify";
-import { parseCv, intakeNext, buildPathways, PathwaysSchema, type ChatTurn, type ParsedCv } from "@/lib/ai/services";
+import { readCv, intakeNext, finishIntake, PathwaysSchema, INTAKE_FALLBACK_QUESTIONS, MAX_INTAKE_QUESTIONS, type ChatTurn, type ParsedCv } from "@/lib/ai/services";
+import { tryLock, unlock, shortHash, setBusyFlag } from "@/lib/ai/guard";
 import { pdfText } from "@/lib/pdftext";
 import { fetchJobText } from "@/lib/jobs";
 import { takeUp } from "@/lib/engagement";
 import { getT } from "@/lib/i18n/server";
 
-export type FormState = { error?: string; ok?: boolean; n?: number; step?: string; email?: string };
+/** aiBusy: the chat reply came from the fixed question list because Gemini was rate-limited (the chat shows a friendly note). */
+export type FormState = { error?: string; ok?: boolean; n?: number; step?: string; email?: string; aiBusy?: boolean };
 
 /* ---------------- S1: details + verification ---------------- */
 
@@ -40,43 +39,11 @@ export async function saveStudentDetails(_: FormState, form: FormData): Promise<
 
 const Email = z.string().trim().toLowerCase().email();
 
-export async function sendCollegeOtp(_: FormState, form: FormData): Promise<FormState> {
-  await requireUser("student");
+/** College email: any properly formatted email is accepted and marks the student verified straight away. No email is sent (Kadam sends no auth emails). */
+export async function saveCollegeEmail(_: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser("student");
   const e = Email.safeParse(form.get("college_email"));
   if (!e.success) return { error: "err.email_invalid" };
-  if (!isAcademicEmail(e.data)) return { error: "verify.not_academic", email: e.data };
-  if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", email: e.data };
-  // The email's link comes back to /auth/college, which verifies the signed-in student (it does not sign them in as the college address).
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  const { error } = await authClient().auth.signInWithOtp({ email: e.data, options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/college` } });
-  if (error) return { error: error.status === 429 ? "err.otp_rate" : "err.otp_send", email: e.data };
-  return { ok: true, step: "code", email: e.data };
-}
-
-/** College-email verification link: proves the student controls an academic address. */
-export async function finishCollegeLink(accessToken: string): Promise<{ ok: true } | { error: string }> {
-  const user = await requireUser("student");
-  if (!hasSupabaseAuth() || !accessToken) return { error: "err.link" };
-  const { data, error } = await authClient().auth.getUser(accessToken);
-  const email = data?.user?.email?.toLowerCase();
-  if (error || !email) return { error: "err.link" };
-  if (!isAcademicEmail(email)) return { error: "verify.not_academic" };
-  await q(`update student_profiles set verification_method = 'email_otp', verification_status = 'verified', college_email = $2, updated_at = now() where user_id = $1`, [user.id, email]);
-  await q(`insert into verification_requests (student_id, method, status, reviewed_at) values ($1,'email_otp','verified',now())`, [user.id]);
-  revalidatePath("/student", "layout");
-  return { ok: true };
-}
-
-export async function verifyCollegeOtp(_: FormState, form: FormData): Promise<FormState> {
-  const user = await requireUser("student");
-  const e = Email.safeParse(form.get("college_email"));
-  const code = String(form.get("code") ?? "").replace(/\D/g, "");
-  if (!e.success || !isAcademicEmail(e.data)) return { error: "err.email_invalid" };
-  if (code.length !== 6) return { error: "err.code_invalid", step: "code", email: e.data };
-  if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", step: "code", email: e.data };
-  const { error } = await authClient().auth.verifyOtp({ email: e.data, token: code, type: "email" });
-  if (error) return { error: "err.code_wrong", step: "code", email: e.data };
   await q(`update student_profiles set verification_method = 'email_otp', verification_status = 'verified', college_email = $2, updated_at = now() where user_id = $1`, [user.id, e.data]);
   await q(`insert into verification_requests (student_id, method, status, reviewed_at) values ($1,'email_otp','verified',now())`, [user.id]);
   revalidatePath("/student", "layout");
@@ -130,10 +97,16 @@ export async function uploadCv(_: FormState, form: FormData): Promise<FormState>
     text = [extracted, pasted].filter(Boolean).join("\n");
   }
   if (!cvFile && text.length < 30) return { error: "profile.err_cv" };
-  const parsed = await parseCv({ bytes, mime, text: text || undefined });
-  const transcript: (ChatTurn & { key?: string })[] = [];
-  const first = await intakeNext({ cv: parsed, transcript: [], jobTexts: [], targetRoles: [] });
-  transcript.push({ role: "assistant", text: first.question ?? "", key: first.questionKey });
+  // Double tap / second tab: one CV reading at a time per student.
+  if (!(await tryLock(`cv:${user.id}`, 60))) {
+    revalidatePath("/student/profile");
+    return { ok: true };
+  }
+  // One Gemini call reads the CV and writes the first intake question.
+  const { cv: parsed, firstQuestion } = await readCv({ bytes, mime, text: text || undefined }).finally(() => unlock(`cv:${user.id}`));
+  const transcript: (ChatTurn & { key?: string })[] = [
+    firstQuestion ? { role: "assistant", text: firstQuestion } : { role: "assistant", text: "", key: INTAKE_FALLBACK_QUESTIONS[0] },
+  ];
   await q(
     `update student_profiles set cv_file = coalesce($2::jsonb, cv_file), cv_text = $3, cv_parsed = $4::jsonb, intake_transcript = $5::jsonb,
        intake_summary = null, pathways = null, approved_at = null, target_roles = '[]'::jsonb, job_links = '[]'::jsonb, updated_at = now() where user_id = $1`,
@@ -169,15 +142,23 @@ export async function answerCareerIntake(prev: FormState, form: FormData): Promi
   const allText = turns.filter((x) => x.role === "user").map((x) => x.text).join(" ");
   const targets = Array.from(new Set([...(profile.target_roles ?? []), ...ROLES.filter((r) => allText.toLowerCase().includes(r.title.toLowerCase())).map((r) => r.title)]));
   const plain = await transcriptText(turns);
-  const next = await intakeNext({ cv: profile.cv_parsed as ParsedCv, transcript: plain, jobTexts, targetRoles: targets });
+  // The same answer sent twice (double tap, resent form) is handled once.
+  if (profile.pathways || !(await tryLock(`intake:${user.id}:${turns.length}:${shortHash(text)}`, 45))) return { ok: true, n: prev.n ?? 0 };
+  // At most MAX_INTAKE_QUESTIONS questions: after the last answer, skip the question call and build the profile.
+  // Also skip it when the AI marked its previous question as the last one it needed.
+  const answered = turns.filter((x) => x.role === "user").length;
+  const lastWasFinal = Boolean((turns.findLast((x) => x.role === "assistant") as { final?: boolean } | undefined)?.final);
+  const next = answered >= MAX_INTAKE_QUESTIONS || lastWasFinal ? { done: true as const } : await intakeNext({ cv: profile.cv_parsed as ParsedCv, transcript: plain, jobTexts, targetRoles: targets });
   if (!next.done) {
-    turns.push({ role: "assistant", text: next.question ?? "", key: next.questionKey } as ChatTurn & { key?: string });
+    turns.push({ role: "assistant", text: next.question ?? "", key: next.questionKey, ...(next.final ? { final: true } : {}) } as ChatTurn & { key?: string });
     await q(`update student_profiles set intake_transcript = $2::jsonb, job_links = $3::jsonb, target_roles = $4::jsonb, updated_at = now() where user_id = $1`, [user.id, J(turns), J(links), J(targets)]);
     revalidatePath("/student/profile");
-    return { ok: true, n: (prev.n ?? 0) + 1 };
+    return { ok: true, n: (prev.n ?? 0) + 1, ...(next.busy ? { aiBusy: true } : {}) };
   }
-  const summary = next.summary!;
-  const pathways = await buildPathways({ cv: profile.cv_parsed as ParsedCv, summary, transcript: plain });
+  // Exactly one pathway call per finished intake (it also writes the summary when the question limit was reached).
+  const built = await finishIntake({ cv: profile.cv_parsed as ParsedCv, summary: ("summary" in next ? next.summary : null) ?? null, transcript: plain, targetRoles: targets });
+  const { summary, pathways } = built;
+  await setBusyFlag(`pathways:${user.id}`, built.busy);
   await q(
     `update student_profiles set intake_transcript = $2::jsonb, job_links = $3::jsonb, target_roles = $4::jsonb, intake_summary = $5::jsonb, pathways = $6::jsonb, approved_at = null, updated_at = now() where user_id = $1`,
     [user.id, J(turns), J(links), J(Array.from(new Set([...targets, ...summary.target_roles]))), J(summary), J(pathways)],
@@ -187,15 +168,13 @@ export async function answerCareerIntake(prev: FormState, form: FormData): Promi
 
 export async function finishCareerIntakeNow() {
   const { user, profile } = await requireStudent();
+  // Pathways already built (double tap, or the last answer finished the intake): never build them twice.
+  if (profile.pathways || !(await tryLock(`pathways:${user.id}`, 60))) redirect("/student/profile");
   const plain = await transcriptText(profile.intake_transcript ?? []);
-  const summary = {
-    interests: profile.cv_parsed?.interests ?? [],
-    current: plain.filter((x) => x.role === "user")[0]?.text ?? "",
-    goal: plain.filter((x) => x.role === "user").at(-1)?.text ?? "",
-    target_roles: profile.target_roles ?? [],
-  };
-  const pathways = await buildPathways({ cv: profile.cv_parsed as ParsedCv, summary, transcript: plain });
-  await q(`update student_profiles set intake_summary = $2::jsonb, pathways = $3::jsonb, approved_at = null, updated_at = now() where user_id = $1`, [user.id, J(summary), J(pathways)]);
+  // One call writes the summary and the pathways together.
+  const built = await finishIntake({ cv: profile.cv_parsed as ParsedCv, summary: null, transcript: plain, targetRoles: profile.target_roles ?? [] }).finally(() => unlock(`pathways:${user.id}`));
+  await setBusyFlag(`pathways:${user.id}`, built.busy);
+  await q(`update student_profiles set intake_summary = $2::jsonb, pathways = $3::jsonb, approved_at = null, updated_at = now() where user_id = $1 and pathways is null`, [user.id, J(built.summary), J(built.pathways)]);
   redirect("/student/profile");
 }
 

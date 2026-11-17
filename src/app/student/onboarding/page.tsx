@@ -23,13 +23,13 @@ export default async function StudentOnboarding() {
       </div>
 
       <section className="card p-5 sm:p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs text-paper">1</span>{t("so.details")}</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-white">1</span>{t("so.details")}</h2>
         <DetailsForm initial={{ name: user.name ?? "", college: profile?.college ?? "", course: profile?.course ?? "", year: profile?.year ?? "" }} />
       </section>
 
       <section id="verify" className={`card scroll-mt-24 p-5 sm:p-6 ${hasDetails ? "" : "pointer-events-none opacity-50"}`}>
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-lg font-bold"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs text-paper">2</span>{t("so.verify")}</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-white">2</span>{t("so.verify")}</h2>
           <StatusBadge status={status} t={t} />
         </div>
         {status === "verified" ? (

@@ -118,7 +118,8 @@ export async function postFeedback(prev: FormState, form: FormData): Promise<For
 export async function retryReport(_: FormState, form: FormData): Promise<FormState> {
   const ctx = await load(form);
   if (!ctx) return { error: "err.session" };
-  const ok = await E.regenerateReport(ctx.e.id);
+  // "Try again" skips the 2-minute coalescing window; the atomic claim still stops two taps from generating twice.
+  const ok = await E.regenerateReport(ctx.e.id, true);
   refresh(ctx.e.id);
   return ok ? { ok: true } : { error: "err.ai_busy" };
 }

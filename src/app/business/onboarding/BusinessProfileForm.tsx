@@ -21,8 +21,8 @@ export function BusinessProfileForm({ profile, next }: { profile: Profile; next?
         <span className="label">{t("bo.type")}</span>
         <div className="grid grid-cols-2 gap-2">
           {BUSINESS_TYPES.map((b) => (
-            <label key={b} className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-line bg-card px-3 text-sm font-medium has-[:checked]:border-ink has-[:checked]:bg-sand">
-              <input type="radio" name="type" value={b} defaultChecked={profile?.type === b} required className="h-4 w-4 accent-ink" />
+            <label key={b} className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-line bg-card px-3 text-sm font-medium has-[:checked]:border-ink has-[:checked]:bg-mist">
+              <input type="radio" name="type" value={b} defaultChecked={profile?.type === b} required className="h-4 w-4 accent-primary" />
               {t(`btype.${b}`)}
             </label>
           ))}
@@ -39,7 +39,7 @@ export function BusinessProfileForm({ profile, next }: { profile: Profile; next?
         <label className="label" htmlFor="city">{t("bo.city")}</label>
         <input id="city" name="city" className="input" required defaultValue={profile?.city ?? ""} placeholder={t("bo.city_ph")} />
       </div>
-      {state.error && <p className="text-sm font-semibold text-clay" role="alert">{t(state.error)}</p>}
+      {state.error && <p className="text-sm font-semibold text-alert" role="alert">{t(state.error)}</p>}
       <SubmitButton className="btn-primary w-full">{next ? t("common.save") : t("common.continue")}</SubmitButton>
     </form>
   );

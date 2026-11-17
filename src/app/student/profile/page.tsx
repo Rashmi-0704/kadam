@@ -9,6 +9,9 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { CvUpload } from "./CvUpload";
 import { Notice, PageTitle, fmtDate } from "@/components/ui";
 import { hasServerStt } from "@/lib/stt";
+import { AiBusyNotice } from "@/components/AiBusyNotice";
+import { retryPathways } from "@/app/actions/ai";
+import { hasBusyFlag } from "@/lib/ai/guard";
 
 // AI calls can take several seconds.
 export const maxDuration = 60;
@@ -64,7 +67,8 @@ export default async function ProfilePage() {
         <StepRail steps={steps} current={2} />
         <h1 className="mt-5 text-2xl font-bold sm:text-3xl">{t("profile.paths_title")}</h1>
         <p className="mt-1 mb-6 max-w-2xl text-ink-2">{t("profile.paths_sub")}</p>
-        <PathwayEditor initial={paths} />
+        {(await hasBusyFlag(`pathways:${user.id}`)) && <AiBusyNotice className="mb-4 max-w-2xl" message="ai.busy_basic" retry={retryPathways} />}
+        <PathwayEditor key={profile.updated_at ? String(profile.updated_at) : undefined} initial={paths} />
       </div>
     );
   }

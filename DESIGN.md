@@ -1,6 +1,6 @@
 # Kadam design system
 
-Visual direction for Kadam's frontend. It takes **inspiration** from the interaction style of brilliant.org (clean, approachable, tactile buttons, friendly cards). No text, images, logos, icons, illustrations, brand assets or font files are copied. Kadam keeps its own identity: warm saffron as the primary colour, a warm paper background, a rounded Google Font for headings.
+Visual direction for Kadam's frontend. It takes **inspiration** from the interaction style of brilliant.org (clean, approachable, tactile buttons, friendly cards). No text, images, logos, icons, illustrations, brand assets or font files are copied. Kadam keeps its own identity: indigo as the primary colour, coral for highlights, a cool off-white background, a rounded Google Font for headings. (Round 2, 17 Nov: the saffron and warm-paper palette was replaced by indigo + coral, and the theme is light only.)
 
 ## Part 1 — What was observed on brilliant.org
 
@@ -51,29 +51,36 @@ Same feel (bright, rounded, tactile, calm hierarchy), Kadam's own identity.
 ### Principles
 1. **Phone first.** Single column at 360 px, touch targets ≥ 48 px (44 px minimum for compact controls), 16 px minimum body text.
 2. **Tactile, not noisy.** Primary actions are chunky and press down; everything else is flat with a thin border.
-3. **Warm paper, not clinical white.** Cards are white on a warm paper background, so they read as cards.
-4. **One loud colour.** Saffron is for the single main action per screen; blue/green/clay are status colours only.
+3. **Light only.** Cards are white on a cool off-white canvas (`#F7F8FC`). No black or dark backgrounds anywhere, including sections.
+4. **One loud colour.** Indigo is the main action colour; coral is reserved for highlights ("New", the eyebrow, sparkles, shimmer). Green, amber and red are status colours.
 5. **Indic-script safe.** Fonts fall back to Nirmala UI / Noto Sans so Hindi, Kannada, Tamil, Odia, Bengali and Gujarati keep comfortable line height (≥ 1.5) and never clip.
 6. **Motion is optional.** The press effect is a 120 ms transform; `prefers-reduced-motion` removes it.
 
 ### Colour tokens
 | Token | Hex | Use |
 |---|---|---|
-| `paper` | `#fbf7f0` | page background |
+| `canvas` | `#f7f8fc` | page background |
 | `card` | `#ffffff` | card / input surface |
-| `sand` | `#f3ece0` | soft neutral fill, chips, hover |
-| `line` | `#e6dccb` | 2 px card/input border |
-| `line-deep` | `#d4c7b0` | bottom edge of secondary buttons and cards |
-| `ink` | `#1c1a27` | primary text, dark buttons (15.9:1 on paper) |
-| `ink-2` | `#4b4759` | secondary text (8.2:1) |
-| `ink-3` | `#6b6678` | tertiary text, placeholders (5.3:1 on paper) |
-| `saffron` | `#f5a025` | primary fill (ink text on it: 8.9:1) |
-| `saffron-edge` | `#c2740b` | primary button bottom edge |
-| `saffron-deep` | `#9a5300` | saffron text on light (5.6:1) |
-| `saffron-soft` | `#fdecd0` | tint backgrounds |
-| `leaf` / `leaf-soft` | `#1f7a52` / `#dcefe4` | success, "in use", verified (5.4:1 on white) |
-| `indigo` / `indigo-soft` | `#3c418f` / `#e6e7f6` | info, in-progress |
-| `clay` / `clay-soft` | `#b4432c` / `#f8e1da` | error, destructive |
+| `mist` | `#eef1f8` | soft neutral fill, chips, hover |
+| `line` | `#e3e7f2` | 2 px card/input border |
+| `line-deep` | `#c8cee2` | bottom edge of secondary buttons and cards |
+| `ink` | `#151a30` | primary text (16.2:1 on canvas) |
+| `ink-2` | `#3e4560` | secondary text (8.9:1) |
+| `ink-3` | `#5d6483` | tertiary text, placeholders (5.5:1 on canvas, 5.1:1 on mist) |
+| `primary` | `#4338ca` | indigo: primary buttons (white text 7.9:1), links, focus ring, active states |
+| `primary-edge` | `#2e2690` | pressable button bottom edge |
+| `primary-deep` | `#3730a3` | indigo text on light (8.8:1 on primary-soft) |
+| `primary-soft` | `#eef0ff` | tint backgrounds |
+| `highlight` | `#ff6b4a` | coral: "New" badges, shimmer, sparkles, accent borders and dots (never small text) |
+| `highlight-deep` | `#b4321a` | coral text, the eyebrow accent (5.4:1 on highlight-soft) |
+| `highlight-soft` | `#ffede8` | coral tint |
+| `glow` | `#818cf8` | soft periwinkle glows and gradients |
+| `success` / `success-ink` / `success-soft` | `#16a34a` / `#15803d` / `#dcfce7` | dots and borders / text and solid fills (5.0:1 with white) / tint |
+| `amber` | `#f59e0b` | 1–2 takers dot |
+| `alert` / `alert-soft` | `#dc2626` / `#fef2f2` | error, destructive, 3+ takers dot (4.8:1 on white) |
+| `info` / `info-soft` | `#4f46e5` / `#e0e7ff` | info, in-progress, Pivot chip (5.1:1) |
+
+Tokens are semantic: nothing is named after a hue that might change again.
 
 All text/background pairs above meet WCAG AA (4.5:1 body, 3:1 large text and UI borders).
 
@@ -87,15 +94,14 @@ All text/background pairs above meet WCAG AA (4.5:1 body, 3:1 large text and UI 
 - Radii: inputs 14 px, buttons 16 px (pills for chips and tabs), cards 20 px.
 - Cards: 2 px `line` border + 4 px `line-deep` bottom edge; interactive cards lift 2 px on hover and press 2 px on active.
 - Spacing: 4 px base; card padding 20 px (16 px on phones); section gaps 24–32 px.
-- Shadows: none by default; focus ring is a 3 px saffron outline with 2 px offset.
+- Shadows: none by default; focus ring is a 3 px indigo outline with 2 px offset.
 
 ### Buttons
 All buttons: min-height 48 px, 16 px radius, 700 weight, 2 px border, 4 px solid bottom edge.
 
 | Variant | Fill | Edge | Text |
 |---|---|---|---|
-| `btn-accent` (main action) | `saffron` | `saffron-edge` | `ink` |
-| `btn-primary` (dark) | `ink` | `#000` | `paper` |
+| `btn-primary` / `btn-accent` (main action) | `primary` | `primary-edge` | white |
 | `btn-secondary` | `card` | `line-deep` | `ink` |
 | `btn-ghost` | transparent | none | `ink-2` |
 | `btn-danger` | `card` | `clay` @ 35 % | `clay` |
@@ -104,18 +110,34 @@ Pressed: `translateY(3px)` and the edge shrinks to 1 px. Disabled: 50 % opacity,
 
 ### Components
 - **Card** (`.card`) white, 20 px radius, 2 px border, bottom edge. `.card-tap` adds hover lift and press.
-- **Input** (`.input`) 52 px high, 2 px border, 14 px radius; focus = ink border + saffron ring.
-- **Chip** (`.chip`) pill, sand fill, 1.5 px border.
+- **Input** (`.input`) 52 px high, 2 px border, 14 px radius; focus = ink border + indigo ring.
+- **Chip** (`.chip`) pill, mist fill, 1.5 px border.
 - **Status badge** soft tint + matching strong text; "in use" is solid leaf.
 - **Notice** soft tint, 2 px border, 16 px radius.
-- **Tabs / pills** (filters, language toggle, roadmap sections) pill shape; selected = ink fill, unselected = card with border.
+- **Tabs / pills** (filters, language toggle, roadmap sections) pill shape; selected = indigo fill with white text, unselected = card with border.
 - **Empty state** centred card with small coloured bar-chart mark.
 
 ### Layout patterns (Kadam's own)
 - **Welcome:** two large role cards (student / business), student first, each a full-width tactile tap target on phones, side by side from 768 px.
-- **Dashboards:** stacked cards on phones, 2–3 column grid from 1024 px; one `btn-accent` per screen.
+- **Dashboards:** stacked cards on phones, 2–3 column grid from 1024 px; one main indigo button per screen; light insight tiles with a slow glow.
 - **Lists (problems, engagements):** full-width tap cards with title, chips and a status badge.
 - **Forms:** single column, label above input, sticky bottom action bar on phones for long forms.
 
+### Brand lock-up and highlights (round 2)
+- **Lock-up:** logo + "Kadam." + the tagline "Take your first step." in `<Highlight>` (`<LockUp>` in `src/components/Logo.tsx`). Used on the welcome screen, both homepages and footers.
+- **`<Highlight>`:** indigo → violet → dark-coral gradient text, a shimmer sweep every ~5 s, a soft periwinkle glow, sparkles on hover. **`<HighlightPill>`** is the pill version (role names in fit reasons). One or two per screen.
+- **Fit reasons:** path chip (Now green, Pivot indigo, Stretch coral) + role as a highlighted pill with a step-path icon.
+- **"New" badge:** coral-soft pill with a coral border and a pulsing coral dot, for problems live within 7 days.
+- **Taker dot:** green pulsing (0, "Be the first"), amber (1–2), red (3+); the label always states the count.
+
+### Motion (round 2)
+- Animate only `transform` and `opacity` (or canvas). Gentle and fast; smooth on a mid-range phone.
+- Off-screen animations pause (`<MotionPauser>` adds `.anim-off`; the GSAP scene pauses its loops); hidden tabs pause on their own.
+- `prefers-reduced-motion`: still versions everywhere (static role pills, still word rows, no shimmer, glow or pulse).
+- **Hero role trail** (`<RoleTrail>`): role pills under the pointer, ≥ 90 px / ≥ 80 ms apart, 1.45 s life, max 12, above the scene and below the text, `pointer-events: none`.
+- **Word rows** (`<WordMarquee>`): three big rows below the hero (solid indigo, outlined indigo, solid navy), sliding left, right, left at 40, 50 and 45 s per loop; hover slows a row to a quarter; CSS only.
+- **Card glow** (`.glow-card`): a slow blurred indigo / periwinkle / coral wash inside main cards, offset per card, stronger on hover.
+- **Chat:** typing dots, slide-in messages, word-by-word newest AI reply, friendly retry bubble with a gentle shake.
+
 ### Do not
-Copy Brilliant's copy, illustrations, icons, logo, fonts or exact brand green; use more than one saffron button per screen; hide content behind animation.
+Copy Brilliant's or TimBuckDo's copy, illustrations, icons, logos, fonts or brand colours; use more than one main indigo button per screen; use dark backgrounds; hide content behind animation.

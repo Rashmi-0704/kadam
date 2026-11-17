@@ -1,63 +1,60 @@
 "use server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { z } from "zod";
-import { hasSupabaseAuth, env } from "@/lib/env";
-import { authClient } from "@/lib/supabase";
+import { hasSupabaseAuth, hasSupabaseAdmin, env } from "@/lib/env";
+import { authClient, adminClient } from "@/lib/supabase";
+import { ensureAdmin, isAdminEmail } from "@/lib/admin-account";
 import { q, one, resetDemoData } from "@/lib/db";
 import { setSession, currentUser, homeFor } from "@/lib/session";
-import { isAcademicEmail } from "@/db/taxonomy";
 import { DEMO_ACCOUNTS } from "@/db/seed-data";
 
 const Email = z.string().trim().toLowerCase().email();
+const Password = z.string().min(8).max(72);
 
-export type AuthState = { ok?: boolean; error?: string; step?: "code" | "role"; email?: string };
+export type AuthState = { ok?: boolean; error?: string; step?: "role"; email?: string; mode?: "signin" | "signup" };
 
-export async function sendOtp(_: AuthState, form: FormData): Promise<AuthState> {
-  const parsed = Email.safeParse(form.get("email"));
-  if (!parsed.success) return { error: "err.email_invalid" };
-  if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", email: parsed.data };
-  // The email can carry a 6-digit code ({{ .Token }}) and/or a sign-in link. The link comes back to /auth/callback.
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-  const as = form.get("role") === "business" ? "business" : form.get("role") === "student" ? "student" : "";
-  const { error } = await authClient().auth.signInWithOtp({
-    email: parsed.data,
-    options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/callback${as ? `?as=${as}` : ""}` },
-  });
-  if (error) {
-    console.warn("[otp] send failed", error.status);
-    return { error: error.status === 429 ? "err.otp_rate" : "err.otp_send", email: parsed.data };
-  }
-  return { ok: true, step: "code", email: parsed.data };
-}
-
-export async function verifyOtp(_: AuthState, form: FormData): Promise<AuthState> {
-  const email = Email.safeParse(form.get("email"));
-  const code = String(form.get("code") ?? "").replace(/\D/g, "");
-  if (!email.success) return { error: "err.email_invalid" };
-  if (code.length !== 6) return { error: "err.code_invalid", step: "code", email: email.data };
-  if (!hasSupabaseAuth()) return { error: "err.otp_unavailable", step: "code", email: email.data };
-  const { error } = await authClient().auth.verifyOtp({ email: email.data, token: code, type: "email" });
-  if (error) return { error: "err.code_wrong", step: "code", email: email.data };
-  let user = await one(`select id, role from users where email = $1`, [email.data]);
-  if (!user) user = await one(`insert into users (email) values ($1) returning id, role`, [email.data]);
-  await setSession(user!.id);
-  if (!user!.role) return { ok: true, step: "role", email: email.data };
-  redirect(homeFor(user!.role));
-}
-
-/** Sign-in link from the email: verify the Supabase access token on the server, then start a Kadam session. */
-export async function finishLinkSignIn(accessToken: string, as: string): Promise<{ next: string } | { error: string }> {
-  if (!hasSupabaseAuth() || !accessToken) return { error: "err.link" };
-  const { data, error } = await authClient().auth.getUser(accessToken);
-  const email = data?.user?.email?.toLowerCase();
-  if (error || !email) return { error: "err.link" };
+/** Sign-in with email + password. Kadam sends no auth emails at all (see BUILD_LOG: switching email flows back on needs custom SMTP). */
+async function startSession(email: string): Promise<AuthState> {
   let user = await one(`select id, role from users where email = $1`, [email]);
   if (!user) user = await one(`insert into users (email) values ($1) returning id, role`, [email]);
   await setSession(user!.id);
-  if (user!.role) return { next: homeFor(user!.role) };
-  return { next: `/auth?step=details${as === "student" || as === "business" ? `&as=${as}` : ""}` };
+  if (!user!.role) return { ok: true, step: "role", email };
+  redirect(homeFor(user!.role));
+}
+
+export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
+  const email = Email.safeParse(form.get("email"));
+  if (!email.success) return { error: "err.email_invalid", mode: "signup" };
+  const password = Password.safeParse(String(form.get("password") ?? ""));
+  if (!password.success) return { error: "err.password_short", email: email.data, mode: "signup" };
+  if (!hasSupabaseAdmin()) return { error: "err.auth_unavailable", email: email.data, mode: "signup" };
+  // Created on the server with the service key and confirmed straight away: no email is sent, whatever the dashboard's "Confirm email" setting is.
+  const { error } = await adminClient().auth.admin.createUser({ email: email.data, password: password.data, email_confirm: true });
+  if (error) {
+    const exists = error.status === 422 || /already|exists|registered/i.test(error.message);
+    if (!exists) console.warn("[auth] create failed", error.status);
+    return { error: exists ? "err.account_exists" : "err.auth_unavailable", email: email.data, mode: exists ? "signin" : "signup" };
+  }
+  const { error: signInError } = await authClient().auth.signInWithPassword({ email: email.data, password: password.data });
+  if (signInError) return { error: "err.auth_unavailable", email: email.data, mode: "signin" };
+  return startSession(email.data);
+}
+
+export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
+  const email = Email.safeParse(form.get("email"));
+  if (!email.success) return { error: "err.email_invalid", mode: "signin" };
+  const password = String(form.get("password") ?? "");
+  if (!password) return { error: "err.password_wrong", email: email.data, mode: "signin" };
+  if (!hasSupabaseAuth()) return { error: "err.auth_unavailable", email: email.data, mode: "signin" };
+  if (isAdminEmail(email.data)) await ensureAdmin();
+  const { error } = await authClient().auth.signInWithPassword({ email: email.data, password });
+  if (error) {
+    if (error.status === 429) return { error: "err.auth_busy", email: email.data, mode: "signin" };
+    // An address that signed in with an email link before passwords existed has no password yet.
+    const known = await one(`select 1 from users where email = $1`, [email.data]);
+    return { error: known ? "err.password_wrong_or_old" : "err.password_wrong", email: email.data, mode: "signin" };
+  }
+  return startSession(email.data);
 }
 
 export async function chooseRole(_: AuthState, form: FormData): Promise<AuthState> {
@@ -71,12 +68,7 @@ export async function chooseRole(_: AuthState, form: FormData): Promise<AuthStat
   if (u.role) redirect(homeFor(u.role));
   await q(`update users set role = $2, name = $3, consent_at = now() where id = $1`, [u.id, role, name]);
   if (role === "student") {
-    const academic = isAcademicEmail(u.email);
-    await q(
-      `insert into student_profiles (user_id, verification_method, verification_status, college_email) values ($1,$2,$3,$4) on conflict (user_id) do nothing`,
-      [u.id, academic ? "email_otp" : null, academic ? "verified" : "not_started", academic ? u.email : null],
-    );
-    if (academic) await q(`insert into verification_requests (student_id, method, status, reviewed_at) values ($1,'email_otp','verified',now())`, [u.id]);
+    await q(`insert into student_profiles (user_id, verification_status) values ($1, 'not_started') on conflict (user_id) do nothing`, [u.id]);
     redirect("/student/onboarding");
   }
   redirect("/business/onboarding");

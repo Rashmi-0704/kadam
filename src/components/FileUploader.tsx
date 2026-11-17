@@ -22,8 +22,8 @@ export function FileUploader({ name, accept, label, multiple = false, compact = 
   };
   return (
     <div>
-      <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-paper transition hover:border-ink-3 ${compact ? "min-h-12 px-3 py-2" : "min-h-24 px-4 py-4"}`}>
-        <span className={`inline-flex shrink-0 items-center justify-center rounded-full bg-saffron-soft text-saffron-deep ${compact ? "h-8 w-8" : "h-11 w-11"}`} aria-hidden="true">
+      <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-canvas transition hover:border-ink-3 ${compact ? "min-h-12 px-3 py-2" : "min-h-24 px-4 py-4"}`}>
+        <span className={`inline-flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-deep ${compact ? "h-8 w-8" : "h-11 w-11"}`} aria-hidden="true">
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
         </span>
         <span className="min-w-0 flex-1">
@@ -32,7 +32,7 @@ export function FileUploader({ name, accept, label, multiple = false, compact = 
         </span>
         <input ref={input} type="file" name={name} accept={accept} multiple={multiple} required={required} className="sr-only" onChange={(e) => onChange(e.target.files)} />
       </label>
-      {error && <p className="mt-2 text-sm font-semibold text-clay" role="alert">{error}</p>}
+      {error && <p className="mt-2 text-sm font-semibold text-alert" role="alert">{error}</p>}
     </div>
   );
 }

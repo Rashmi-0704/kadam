@@ -3,7 +3,11 @@ import { getT } from "@/lib/i18n/server";
 import { LandingHero } from "@/components/scene/LandingHero";
 import { Reveal, GrowSteps } from "@/components/scene/Motion";
 import { VoiceDemo } from "@/components/scene/VoiceDemo";
-import { LogoMark } from "@/components/Logo";
+import { LockUp } from "@/components/Logo";
+import { WordMarquee } from "@/components/motion/WordMarquee";
+import { Highlight } from "@/components/motion/Highlight";
+import { FaqTabs } from "@/components/home/FaqTabs";
+import { faqTabs } from "@/components/home/faq";
 
 export const metadata = { title: "For businesses and NGOs", description: "Tell Kadam a problem in your own language. College students will solve it for free." };
 
@@ -19,9 +23,11 @@ const HELP = [
 export default async function BusinessesHome() {
   const t = await getT();
   return (
-    <div className="bg-paper">
+    <div className="bg-canvas">
       <LandingHero
         focus="business"
+        tagline={t("landing.tagline")}
+        strip={{ text: t("strip.student"), href: "/students" }}
         eyebrow={t("bl.eyebrow")}
         h1={t("bl.h1")}
         accent={t("bl.h1_accent")}
@@ -37,10 +43,13 @@ export default async function BusinessesHome() {
         showLanguage
       />
 
-      <section className="border-b border-line bg-sand">
+      <WordMarquee rows={[[t("wm.b1"), t("wm.b2"), t("wm.b3")], [t("wm.b4"), t("wm.b5"), t("wm.b6")], [t("wm.b7"), t("wm.b8"), t("wm.b9")]]} />
+      <p className="sr-only">{t("wm.sr")}</p>
+
+      <section className="border-b border-line bg-mist">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-5 text-sm font-semibold text-ink-2">
           {["bl.trust1", "bl.trust2", "bl.trust3", "bl.trust4"].map((k) => (
-            <span key={k} className="inline-flex items-center gap-2"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-leaf text-[11px] text-white">✓</span>{t(k)}</span>
+            <span key={k} className="inline-flex items-center gap-2"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-success-ink text-[11px] text-white">✓</span>{t(k)}</span>
           ))}
         </div>
       </section>
@@ -55,7 +64,7 @@ export default async function BusinessesHome() {
           <ol className="mt-12 grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((n) => (
               <li key={n} data-reveal className="card relative overflow-hidden p-6">
-                <span className="absolute -top-6 -right-2 font-display text-[120px] leading-none font-extrabold text-sand" aria-hidden="true">{n}</span>
+                <span className="absolute -top-6 -right-2 font-display text-[120px] leading-none font-extrabold text-mist" aria-hidden="true">{n}</span>
                 <div className="relative">
                   <GrowSteps n={3} active={n} />
                   <h3 className="mt-4 text-xl font-bold">{t(`bl.step${n}`)}</h3>
@@ -67,16 +76,16 @@ export default async function BusinessesHome() {
         </Reveal>
       </section>
 
-      <section className="bg-ink text-paper">
+      <section className="border-y-2 border-line bg-primary-soft">
         <Reveal className="mx-auto max-w-6xl px-4 py-20">
-          <p data-reveal className="eyebrow text-saffron">{t("bl.help_eyebrow")}</p>
+          <p data-reveal className="eyebrow">{t("bl.help_eyebrow")}</p>
           <h2 data-reveal className="mt-2 max-w-3xl text-[32px] leading-tight font-bold sm:text-[44px]">{t("bl.help_title")}</h2>
           <ul className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3">
             {HELP.map((h) => (
-              <li key={h.key} data-reveal className="group rounded-2xl border border-paper/10 bg-paper/[0.04] p-5 transition hover:border-saffron/60 hover:bg-paper/[0.08]">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 text-saffron transition group-hover:scale-110" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{h.icon}</svg>
+              <li key={h.key} data-reveal className="glow-card group card p-5 transition hover:-translate-y-0.5">
+                <svg viewBox="0 0 24 24" className="h-8 w-8 text-primary transition group-hover:scale-110" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{h.icon}</svg>
                 <h3 className="mt-4 font-bold">{t(`bl.help_${h.key}`)}</h3>
-                <p className="mt-1 text-sm text-paper/65">{t(`bl.help_${h.key}_sub`)}</p>
+                <p className="mt-1 text-sm text-ink-2">{t(`bl.help_${h.key}_sub`)}</p>
               </li>
             ))}
           </ul>
@@ -91,31 +100,33 @@ export default async function BusinessesHome() {
             <p data-reveal className="mt-4 text-lg text-ink-2">{t("bl.story_body")}</p>
           </div>
           <div data-reveal className="grid gap-3">
-            <div className="card border-clay/30 bg-clay-soft/50 p-5">
-              <p className="text-xs font-bold tracking-wide text-clay uppercase">{t("bl.before")}</p>
+            <div className="card border-alert/30 bg-alert-soft/50 p-5">
+              <p className="text-xs font-bold tracking-wide text-alert uppercase">{t("bl.before")}</p>
               <p className="mt-1 text-lg font-semibold">{t("bl.before_text")}</p>
             </div>
-            <div className="card border-leaf/30 bg-leaf-soft/60 p-5">
-              <p className="text-xs font-bold tracking-wide text-leaf uppercase">{t("bl.after")}</p>
+            <div className="card border-success/30 bg-success-soft/60 p-5">
+              <p className="text-xs font-bold tracking-wide text-success-ink uppercase">{t("bl.after")}</p>
               <p className="mt-1 text-lg font-semibold">{t("bl.after_text")}</p>
             </div>
           </div>
         </div>
       </Reveal>
 
-      <section className="bg-[#120f1d] text-paper">
+      <FaqTabs title={t("faq.title")} tabs={faqTabs(t, "businesses")} />
+
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-soft via-canvas to-highlight-soft">
         <Reveal className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <div data-reveal className="mx-auto mb-6 w-fit"><LogoMark className="h-12 w-12" /></div>
-          <h2 data-reveal className="mx-auto max-w-2xl text-[32px] leading-tight font-bold sm:text-[44px]">{t("bl.final_title")}</h2>
-          <p data-reveal className="mx-auto mt-3 max-w-lg text-paper/70">{t("bl.final_sub")}</p>
-          <Link data-reveal href="/auth?as=business" className="btn-accent mt-8 px-10 text-base">{t("bl.cta")} →</Link>
+          <p data-reveal className="font-display text-2xl font-extrabold sm:text-3xl">Kadam. <Highlight>{t("landing.tagline")}</Highlight></p>
+          <h2 data-reveal className="mx-auto mt-4 max-w-2xl text-[32px] leading-tight font-bold sm:text-[44px]">{t("bl.final_title")}</h2>
+          <p data-reveal className="mx-auto mt-3 max-w-lg text-lg text-ink-2">{t("bl.final_sub")}</p>
+          <Link data-reveal href="/auth?as=business" className="btn-primary mt-8 px-10 text-base">{t("bl.cta")} →</Link>
         </Reveal>
       </section>
 
-      <footer className="bg-[#0d0b14] text-paper/50">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm">
-          <span>{t("landing.tagline")}</span>
-          <Link href="/" className="underline underline-offset-4 hover:text-paper">{t("bl.not_business")}</Link>
+      <footer className="border-t-2 border-line bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm text-ink-2">
+          <LockUp tagline={t("landing.tagline")} />
+          <Link href="/" className="font-semibold underline underline-offset-4 hover:text-primary-deep">{t("bl.not_business")}</Link>
         </div>
       </footer>
     </div>

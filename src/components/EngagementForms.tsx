@@ -4,10 +4,11 @@ import { submitSolution, withdrawEngagement, confirmReceipt, setEngagementStatus
 import { SubmitButton } from "./SubmitButton";
 import { FileUploader } from "./FileUploader";
 import { useT } from "@/lib/i18n/client";
+import { aiText } from "@/lib/ai/copy";
 
 function Err({ s }: { s: FormState }) {
   const t = useT();
-  return s.error ? <p className="text-sm font-semibold text-clay" role="alert">{t(s.error)}</p> : null;
+  return s.error ? <p className="text-sm font-semibold text-alert" role="alert">{t(s.error)}</p> : null;
 }
 
 export function SubmissionForm({ engagementId, resubmit }: { engagementId: string; resubmit?: boolean }) {
@@ -36,11 +37,11 @@ export function WithdrawButton({ engagementId }: { engagementId: string }) {
   const t = useT();
   const [confirm, setConfirm] = useState(false);
   const [s, action] = useActionState<FormState, FormData>(withdrawEngagement, {});
-  if (!confirm) return <button type="button" className="btn-ghost btn-sm w-full text-clay" onClick={() => setConfirm(true)}>{t("eng.withdraw")}</button>;
+  if (!confirm) return <button type="button" className="btn-ghost btn-sm w-full text-alert" onClick={() => setConfirm(true)}>{t("eng.withdraw")}</button>;
   return (
-    <form action={action} className="space-y-2 rounded-xl border border-clay/30 bg-clay-soft p-3">
+    <form action={action} className="space-y-2 rounded-xl border border-alert/30 bg-alert-soft p-3">
       <input type="hidden" name="engagementId" value={engagementId} />
-      <p className="text-sm font-medium text-clay">{t("eng.withdraw_confirm")}</p>
+      <p className="text-sm font-medium text-alert">{t("eng.withdraw_confirm")}</p>
       <div className="flex gap-2">
         <SubmitButton className="btn-danger btn-sm flex-1">{t("eng.withdraw_yes")}</SubmitButton>
         <button type="button" className="btn-secondary btn-sm flex-1" onClick={() => setConfirm(false)}>{t("common.cancel")}</button>
@@ -77,8 +78,8 @@ export function StatusSetter({ engagementId, current }: { engagementId: string; 
       <fieldset className="grid gap-2">
         <legend className="label">{t("eng.set_status")}</legend>
         {opts.map((o) => (
-          <label key={o} className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 ${choice === o ? "border-ink bg-sand" : "border-line bg-card"}`}>
-            <input type="radio" name="status" value={o} checked={choice === o} onChange={() => setChoice(o)} className="mt-1 h-4 w-4 accent-ink" required />
+          <label key={o} className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 ${choice === o ? "border-ink bg-mist" : "border-line bg-card"}`}>
+            <input type="radio" name="status" value={o} checked={choice === o} onChange={() => setChoice(o)} className="mt-1 h-4 w-4 accent-primary" required />
             <span>
               <span className="block font-semibold">{t(`status.${o}`)}</span>
               <span className="text-sm text-ink-2">{t(`eng.status_${o}_help`)}</span>
@@ -104,7 +105,7 @@ export function ImpactUpdateForm({ engagementId }: { engagementId: string }) {
   return (
     <form key={s.n} action={action} className="space-y-3">
       <input type="hidden" name="engagementId" value={engagementId} />
-      {s.ok && <p className="rounded-xl bg-leaf-soft px-3 py-2 text-sm font-semibold text-leaf" role="status">{t("impact.posted")}</p>}
+      {s.ok && <p className="rounded-xl bg-success-soft px-3 py-2 text-sm font-semibold text-success-ink" role="status">{t("impact.posted")}</p>}
       <div>
         <label className="label" htmlFor="what_changed">{t("impact.what_changed")}</label>
         <textarea id="what_changed" name="what_changed" rows={2} required className="input" placeholder={t("impact.what_changed_ph")} />
@@ -133,7 +134,7 @@ export function FeedbackForm({ engagementId }: { engagementId: string }) {
   return (
     <form key={s.n} action={action} className="space-y-2">
       <input type="hidden" name="engagementId" value={engagementId} />
-      {s.ok && <p className="text-sm font-semibold text-leaf" role="status">{t("feedback.sent")}</p>}
+      {s.ok && <p className="text-sm font-semibold text-success-ink" role="status">{t("feedback.sent")}</p>}
       <label className="label" htmlFor="fb">{t("feedback.label")}</label>
       <textarea id="fb" name="text" rows={2} className="input" placeholder={t("feedback.ph")} required />
       <Err s={s} />
@@ -146,9 +147,9 @@ export function RetryReportButton({ engagementId }: { engagementId: string }) {
   const t = useT();
   const [s, action] = useActionState<FormState, FormData>(retryReport, {});
   return (
-    <form action={action} className="flex flex-wrap items-center gap-2">
+    <form action={action} role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-amber/40 bg-amber/10 px-3 py-2">
       <input type="hidden" name="engagementId" value={engagementId} />
-      <span className="text-sm text-ink-2">{t("report.retry_msg")}</span>
+      <span className="flex-1 text-sm text-ink">{aiText(t, "ai.busy_last")}</span>
       <SubmitButton className="btn-secondary btn-sm">{t("common.retry")}</SubmitButton>
       <Err s={s} />
     </form>

@@ -6,6 +6,7 @@ import { fileUrl, type StoredFile } from "@/lib/storage";
 import { EmptyState, PageTitle, Section, StatusBadge, fmtDate, timeAgo } from "@/components/ui";
 import { reviewVerification } from "@/app/actions/admin";
 import { SubmitButton } from "@/components/SubmitButton";
+import { AiUsage } from "../AiUsage";
 
 export const metadata = { title: "ID checks" };
 
@@ -40,7 +41,7 @@ export default async function AdminVerifications() {
               return (
                 <li key={p.id} className="card overflow-hidden">
                   {p.url && (
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="block bg-sand">
+                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="block bg-mist">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {(p.id_file as StoredFile).type.startsWith("image/") ? <img src={p.url} alt={t("admin.id_alt", { name: p.name })} className="h-56 w-full object-contain" /> : <span className="flex h-24 items-center justify-center font-semibold">📄 {(p.id_file as StoredFile).name}</span>}
                     </a>
@@ -52,7 +53,7 @@ export default async function AdminVerifications() {
                         <p className="text-sm text-ink-2">{[p.course, p.year, p.college].filter(Boolean).join(" · ")}</p>
                         <p className="text-xs text-ink-3">{p.email}</p>
                       </div>
-                      <span className={`chip shrink-0 ${hoursLeft < 12 ? "border-clay/30 bg-clay-soft text-clay" : ""}`}>{t("admin.hours_left", { n: hoursLeft })}</span>
+                      <span className={`chip shrink-0 ${hoursLeft < 12 ? "border-alert/30 bg-alert-soft text-alert" : ""}`}>{t("admin.hours_left", { n: hoursLeft })}</span>
                     </div>
                     <p className="text-xs text-ink-3">{t("admin.submitted", { ago: timeAgo(p.submitted_at, t) })}</p>
                     <form action={reviewVerification} className="space-y-2">
@@ -82,6 +83,7 @@ export default async function AdminVerifications() {
           </ul>
         </Section>
       )}
+      <AiUsage t={t} />
     </AppShell>
   );
 }

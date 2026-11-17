@@ -41,8 +41,8 @@ export default async function NotificationsPage() {
           <ul className="card divide-y divide-line overflow-hidden">
             {rows.map((n) => (
               <li key={n.id}>
-                <Link href={linkFor(user.role, n.type, n.payload)} className={`flex gap-3 px-4 py-4 hover:bg-paper ${n.read ? "" : "bg-saffron-soft/30"}`}>
-                  <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-saffron"}`} aria-hidden="true" />
+                <Link href={linkFor(user.role, n.type, n.payload)} className={`flex gap-3 px-4 py-4 hover:bg-canvas ${n.read ? "" : "bg-primary-soft/30"}`}>
+                  <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-primary"}`} aria-hidden="true" />
                   <span className="min-w-0 flex-1">
                     <span className={`block ${n.read ? "text-ink-2" : "font-semibold"}`}>{text(t, n.type, n.payload)}</span>
                     {n.payload?.preview && <span className="block truncate text-sm text-ink-3">“{n.payload.preview}”</span>}

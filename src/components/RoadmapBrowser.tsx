@@ -10,11 +10,11 @@ export type BrowserItem = { slug: string; title: string; kind: "role" | "skill";
 function Tile({ it }: { it: BrowserItem }) {
   const t = useT();
   return (
-    <Link href={`/student/roadmaps/${it.slug}`} className="group relative flex min-h-[3.25rem] items-center justify-between gap-2 overflow-hidden rounded-xl border-2 border-ink bg-card px-4 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-[0_5px_0_-1px_#1c1a27]">
-      {it.pct !== null && it.pct > 0 && <span className="absolute inset-y-0 left-0 bg-saffron-soft transition-all" style={{ width: `${it.pct}%` }} aria-hidden="true" />}
+    <Link href={`/student/roadmaps/${it.slug}`} className="glow-card group relative flex min-h-[3.25rem] items-center justify-between gap-2 rounded-xl border-2 border-line-deep bg-card px-4 py-3 font-semibold transition hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_5px_0_-1px_var(--color-primary-edge)]">
+      {it.pct !== null && it.pct > 0 && <span className="absolute inset-y-0 left-0 -z-[1] bg-primary-soft transition-all" style={{ width: `${it.pct}%` }} aria-hidden="true" />}
       <span className="relative min-w-0">
         <span className="block truncate">{it.title}</span>
-        {it.tier && <span className="block text-[11px] font-bold tracking-wide text-saffron-deep uppercase">{t(`path.${it.tier}`)}</span>}
+        {it.tier && <span className="block text-[11px] font-bold tracking-wide text-primary-deep uppercase">{t(`path.${it.tier}`)}</span>}
       </span>
       <span className="relative shrink-0 text-xs font-bold text-ink-3 group-hover:text-ink">{it.pct ? `${it.pct}%` : "→"}</span>
     </Link>

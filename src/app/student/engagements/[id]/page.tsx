@@ -7,6 +7,9 @@ import { ChatThread } from "@/components/ChatThread";
 import { SubmissionForm, WithdrawButton } from "@/components/EngagementForms";
 import { BackLink, Notice, StatusBadge } from "@/components/ui";
 
+// A due report regeneration may run after the response (after()).
+export const maxDuration = 60;
+
 export const metadata = { title: "Workspace" };
 
 export default async function StudentWorkspace({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
@@ -59,7 +62,7 @@ export default async function StudentWorkspace({ params, searchParams }: { param
             <section className="card p-5">
               <h2 className="mb-3 font-bold">{t("sub.yours")}</h2>
               <SubmissionView sub={ws.sub} files={ws.subFiles} t={t} lang={lang} />
-              {e.status === "submitted" && <p className="mt-4 rounded-xl bg-sand px-3 py-2 text-sm">{t("sub.waiting_receipt", { business: e.business_name })}</p>}
+              {e.status === "submitted" && <p className="mt-4 rounded-xl bg-mist px-3 py-2 text-sm">{t("sub.waiting_receipt", { business: e.business_name })}</p>}
             </section>
           ) : null}
           {e.status !== "withdrawn" && <ReportTeaser ws={ws} t={t} lang={lang} isStudent />}

@@ -21,7 +21,7 @@ export function NavLinks({ items, variant }: { items: NavItem[]; variant: "top" 
       <ul className="flex items-center gap-1">
         {items.map((i) => (
           <li key={i.href}>
-            <Link href={i.href} className={`rounded-full px-4 py-2 text-sm font-semibold ${active(i.href) ? "bg-ink text-paper" : "text-ink-2 hover:bg-sand"}`}>{i.label}</Link>
+            <Link href={i.href} className={`rounded-full px-4 py-2 text-sm font-semibold ${active(i.href) ? "bg-primary text-white" : "text-ink-2 hover:bg-mist"}`}>{i.label}</Link>
           </li>
         ))}
       </ul>
@@ -31,7 +31,7 @@ export function NavLinks({ items, variant }: { items: NavItem[]; variant: "top" 
       {items.map((i) => (
         <li key={i.href} className="flex-1">
           <Link href={i.href} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${active(i.href) ? "text-ink" : "text-ink-3"}`}>
-            <span className={`flex h-7 w-12 items-center justify-center rounded-full ${active(i.href) ? "bg-saffron-soft" : ""}`}>
+            <span className={`flex h-7 w-12 items-center justify-center rounded-full ${active(i.href) ? "bg-primary-soft" : ""}`}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">{ICONS[i.icon]}</svg>
             </span>
             {i.label}

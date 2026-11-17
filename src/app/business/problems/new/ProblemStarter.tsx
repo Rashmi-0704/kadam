@@ -29,7 +29,7 @@ export function ProblemStarter({ serverStt }: { serverStt: boolean }) {
             role="tab"
             aria-selected={mode === tb.id}
             onClick={() => setMode(tb.id)}
-            className={`flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 text-sm font-semibold transition ${mode === tb.id ? "border-ink bg-card" : "border-transparent bg-sand text-ink-2"}`}
+            className={`flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 text-sm font-semibold transition ${mode === tb.id ? "border-ink bg-card" : "border-transparent bg-mist text-ink-2"}`}
           >
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{tb.icon}</svg>
             {tb.label}
@@ -55,7 +55,7 @@ export function ProblemStarter({ serverStt }: { serverStt: boolean }) {
           <textarea id="text" name="text" rows={mode === "text" ? 6 : 4} className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("pc.text_ph")} />
         </div>
       </div>
-      {state.error && <p className="text-sm font-semibold text-clay" role="alert">{t(state.error)}</p>}
+      {state.error && <p className="text-sm font-semibold text-alert" role="alert">{t(state.error)}</p>}
       <SubmitButton className="btn-primary w-full" pendingLabel={t("pc.starting")}>{t("pc.start")}</SubmitButton>
       <p className="text-center text-sm text-ink-3">{t("pc.privacy")}</p>
     </form>

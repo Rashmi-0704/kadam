@@ -41,18 +41,18 @@ export default async function StudentDashboard() {
       <InsightTiles
         items={[
           { label: t("ins.taken"), value: engagements.filter((e) => e.status !== "withdrawn").length, tone: "ink", icon: ICONS.briefcase, href: "/student/problems" },
-          { label: t("ins.in_use"), value: engagements.filter((e) => ["accepted", "in_use"].includes(e.status)).length, hint: t("ins.in_use_hint"), tone: "leaf", icon: ICONS.check },
-          { label: t("ins.reports"), value: reports.length, tone: "saffron", icon: ICONS.report, href: reports[0] ? `/reports/${reports[0].share_token}` : undefined },
-          { label: t("ins.topics"), value: progress.reduce((n, r) => n + progressOf(r.steps, r.statuses).done, 0), hint: t("ins.topics_hint"), tone: "indigo", icon: ICONS.steps, href: "/student/roadmaps" },
+          { label: t("ins.in_use"), value: engagements.filter((e) => ["accepted", "in_use"].includes(e.status)).length, hint: t("ins.in_use_hint"), tone: "success", icon: ICONS.check },
+          { label: t("ins.reports"), value: reports.length, tone: "primary", icon: ICONS.report, href: reports[0] ? `/reports/${reports[0].share_token}` : undefined },
+          { label: t("ins.topics"), value: progress.reduce((n, r) => n + progressOf(r.steps, r.statuses, r.role).done, 0), hint: t("ins.topics_hint"), tone: "info", icon: ICONS.steps, href: "/student/roadmaps" },
         ]}
       />
 
       {nextStep && (
-        <div className="card mb-8 flex flex-col gap-4 border-ink bg-ink p-6 text-paper sm:flex-row sm:items-center sm:justify-between">
+        <div className="glow-card card mb-8 flex flex-col gap-4 border-primary/40 bg-primary-soft p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="eyebrow text-saffron">{t("sd.next")}</p>
+            <p className="eyebrow">{t("sd.next")}</p>
             <h2 className="mt-1 text-xl font-bold">{nextStep.title}</h2>
-            <p className="mt-1 text-paper/75">{nextStep.body}</p>
+            <p className="mt-1 text-ink-2">{nextStep.body}</p>
           </div>
           <Link href={nextStep.href} className="btn-accent shrink-0">{nextStep.cta}</Link>
         </div>
@@ -63,8 +63,8 @@ export default async function StudentDashboard() {
           <ul className="grid gap-3 md:grid-cols-2">
             {reports.map((e) => (
               <li key={e.id}>
-                <Link href={`/reports/${e.share_token}`} className="card flex h-full flex-col gap-2 border-leaf/30 bg-leaf-soft/40 p-5 hover:border-leaf">
-                  <span className="eyebrow text-leaf">{t("report.eyebrow")} · v{e.report_version}</span>
+                <Link href={`/reports/${e.share_token}`} className="card flex h-full flex-col gap-2 border-success/30 bg-success-soft/40 p-5 hover:border-success">
+                  <span className="eyebrow text-success-ink">{t("report.eyebrow")} · v{e.report_version}</span>
                   <span className="font-bold leading-snug">{e.title}</span>
                   <span className="text-sm text-ink-2">{t("sd.report_updated", { date: fmtDate(e.report_at, lang) })}</span>
                 </Link>
@@ -90,7 +90,7 @@ export default async function StudentDashboard() {
                     <StatusBadge status={e.status} t={t} />
                   </div>
                   {e.reason && ["rejected", "needs_changes"].includes(e.status) && (
-                    <p className={`rounded-xl px-3 py-2 text-sm ${e.status === "rejected" ? "bg-clay-soft text-clay" : "bg-saffron-soft text-saffron-deep"}`}>
+                    <p className={`rounded-xl px-3 py-2 text-sm ${e.status === "rejected" ? "bg-alert-soft text-alert" : "bg-primary-soft text-primary-deep"}`}>
                       <strong>{e.status === "rejected" ? t("eng.rejected_reason") : t("eng.needs_changes_notice")}</strong> {e.reason}
                     </p>
                   )}
@@ -107,7 +107,7 @@ export default async function StudentDashboard() {
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {progress.map((r) => {
-              const pr = progressOf(r.steps, r.statuses);
+              const pr = progressOf(r.steps, r.statuses, r.role);
               const total = pr.total;
               const done = pr.done + pr.skipped;
               const pct = pr.pct;
@@ -115,7 +115,7 @@ export default async function StudentDashboard() {
                 <li key={r.role}>
                   <Link href={`/student/roadmaps/${r.role}`} className="card block p-4 hover:border-ink-3">
                     <span className="font-bold">{r.title ?? roleTitle(r.role)}</span>
-                    <span className="mt-2 block h-2 overflow-hidden rounded-full bg-sand"><span className="block h-full rounded-full bg-saffron" style={{ width: `${pct}%` }} /></span>
+                    <span className="mt-2 block h-2 overflow-hidden rounded-full bg-mist"><span className="block h-full rounded-full bg-primary" style={{ width: `${pct}%` }} /></span>
                     <span className="mt-1 block text-sm text-ink-3">{t("rm.progress", { done, total })}</span>
                   </Link>
                 </li>
