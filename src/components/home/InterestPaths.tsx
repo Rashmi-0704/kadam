@@ -50,7 +50,8 @@ export function InterestPaths() {
     <Reveal as="section" className="mx-auto max-w-6xl px-4 py-20" aria-labelledby="ip-title">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
         <div>
-          <h2 id="ip-title" className="text-[32px] leading-tight font-bold sm:text-[40px]">What do you enjoy?</h2>
+          <p className="eyebrow">Try it</p>
+          <h2 id="ip-title" className="mt-2 text-[32px] leading-tight font-bold sm:text-[40px]">What do you enjoy?</h2>
           <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Things you enjoy">
             {INTERESTS.map((it) => {
               const on = picked.includes(it.id);
