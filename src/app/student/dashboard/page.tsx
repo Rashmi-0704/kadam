@@ -10,6 +10,7 @@ import { ProblemCard } from "@/components/ProblemBits";
 import { Reveal } from "@/components/motion/Reveal";
 import { DashColumns, DashSection, EmptyCard, NextStepCard, ProgressLine, WelcomeBanner } from "@/components/dashboard/DashBits";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
+import { DashBackdrop } from "@/components/dashboard/DashBackdrop";
 import { cachedSuggestions, headlineOf, newestProblems, nextTopic } from "@/lib/dashboard";
 
 export const metadata = { title: "Dashboard" };
@@ -91,7 +92,9 @@ export default async function StudentDashboard() {
   const tip = tipOfTheDay();
 
   return (
-    <div>
+    <div className="relative">
+      <DashBackdrop words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]} />
+      <div className="relative z-10">
       <WelcomeBanner tone="student" art="steps" greeting={firstName ? `Hi, ${firstName}` : "Hi there"} status={status} />
       <NextStepCard eyebrow="Your next step" {...next} />
       <InsightTiles
@@ -234,6 +237,7 @@ export default async function StudentDashboard() {
           </>
         }
       />
+      </div>
     </div>
   );
 }

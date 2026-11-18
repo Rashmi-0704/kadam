@@ -9,6 +9,7 @@ import { InsightTiles, ICONS } from "@/components/InsightTiles";
 import { Reveal } from "@/components/motion/Reveal";
 import { DashColumns, DashSection, EmptyCard, Initials, NextStepCard, ProgressLine, WelcomeBanner } from "@/components/dashboard/DashBits";
 import { headlineOf } from "@/lib/dashboard";
+import { DashBackdrop } from "@/components/dashboard/DashBackdrop";
 
 export const metadata = { title: "Dashboard" };
 
@@ -96,7 +97,9 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
   };
 
   return (
-    <div>
+    <div className="relative">
+      <DashBackdrop words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]} />
+      <div className="relative z-10">
       <WelcomeBanner tone="business" art="shop" greeting={t("bd.title", { name: firstName })} status={t("bd.status_line", { live, students })} />
       {sp.welcome && <Notice kind="success" className="mb-6">{t("bd.welcome")}</Notice>}
       <NextStepCard eyebrow={t("bd.next_eyebrow")} {...next} />
@@ -224,6 +227,7 @@ export default async function BusinessDashboard({ searchParams }: { searchParams
           </>
         }
       />
+      </div>
     </div>
   );
 }

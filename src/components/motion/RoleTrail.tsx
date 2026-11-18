@@ -26,7 +26,11 @@ function shuffled<T>(a: readonly T[]) {
   return b;
 }
 
-export function RoleTrail() {
+/**
+ * `page`: the layer is a fixed, full-screen background (dashboards). Pointer events are read from the whole
+ * document (the layer sits behind the content), and `blockSelector` lists what counts as content.
+ */
+export function RoleTrail({ page = false, blockSelector = "[data-trail-block]" }: { page?: boolean; blockSelector?: string } = {}) {
   const layer = useRef<HTMLDivElement>(null);
   const line = useRef<SVGPolylineElement>(null);
   // On only when motion is allowed (and never during server render).
@@ -56,7 +60,7 @@ export function RoleTrail() {
 
     const measure = () => {
       heroBox = hero.getBoundingClientRect();
-      blocks = Array.from(hero.querySelectorAll("[data-trail-block]")).map((e) => e.getBoundingClientRect());
+      blocks = Array.from((page ? document : hero).querySelectorAll(blockSelector)).map((e) => e.getBoundingClientRect()).filter((r) => r.bottom > 0 && r.top < window.innerHeight);
     };
     const remeasure = () => { cancelAnimationFrame(measureRaf); measureRaf = requestAnimationFrame(measure); };
     const blocked = (x: number, y: number) =>
@@ -143,9 +147,10 @@ export function RoleTrail() {
       if (yes === listening) return;
       listening = yes;
       const f = yes ? "addEventListener" : "removeEventListener";
-      hero[f]("pointermove", onMove as EventListener, { passive: true } as AddEventListenerOptions);
-      hero[f]("touchstart", onTap as EventListener, { passive: true } as AddEventListenerOptions);
-      hero[f]("touchmove", onTouch as EventListener, { passive: true } as AddEventListenerOptions);
+      const src: EventTarget = page ? document : hero;
+      src[f]("pointermove", onMove as EventListener, { passive: true } as AddEventListenerOptions);
+      src[f]("touchstart", onTap as EventListener, { passive: true } as AddEventListenerOptions);
+      src[f]("touchmove", onTouch as EventListener, { passive: true } as AddEventListenerOptions);
       window[f]("scroll", remeasure, { passive: true } as AddEventListenerOptions);
       window[f]("resize", remeasure, { passive: true } as AddEventListenerOptions);
       if (yes) measure();
@@ -163,7 +168,7 @@ export function RoleTrail() {
       window.clearTimeout(settle);
       slots.forEach((s) => s.anim?.cancel());
     };
-  }, [on]);
+  }, [on, page, blockSelector]);
 
   if (!on) return null;
   return (
