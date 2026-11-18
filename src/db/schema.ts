@@ -6,6 +6,8 @@ export const UPGRADE_SQL = `
 alter table roadmap_progress add column if not exists statuses jsonb not null default '{}'::jsonb;
 -- Round 3: when an old link-made account (or an admin reset) set its password.
 alter table users add column if not exists password_set_at timestamptz;
+-- Round 4: the six sharpest problems are pinned to the top of every list (null = after them, newest first).
+alter table problems add column if not exists sort_rank int;
 create table if not exists ai_usage (bucket text not null, feature text not null, calls int not null default 0, limited int not null default 0, failed int not null default 0, primary key (bucket, feature));
 alter table ai_usage enable row level security;
 -- Every live or closed problem has a go-live date (drives the "New" badge and ranking).
@@ -85,7 +87,8 @@ create table if not exists problems (
   categories jsonb not null default '{}'::jsonb,
   status text not null default 'draft' check (status in ('draft','live','closed')),
   created_at timestamptz not null default now(),
-  live_at timestamptz
+  live_at timestamptz,
+  sort_rank int
 );
 create index if not exists problems_status_idx on problems(status);
 

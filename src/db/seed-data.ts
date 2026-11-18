@@ -72,10 +72,10 @@ export async function seed(q: Q, put: Put) {
   // Ananya: verified, no profile yet (used for the live profile-builder demo).
   await q(
     `insert into student_profiles (user_id, college, course, year, verification_method, verification_status, college_email)
-     values ($1,'Odisha University of Technology and Research, Bhubaneswar','B.Tech, Computer Science','3rd year','email_otp','verified','ananya.das@outr.ac.in')`,
+     values ($1,'Odisha University of Technology and Research, Bhubaneswar','B.Tech, Computer Science','3rd year','id_upload','verified',null)`,
     [IDS.ananya],
   );
-  await q(`insert into verification_requests (student_id, method, status, submitted_at, reviewed_at) values ($1,'email_otp','verified',$2,$2)`, [IDS.ananya, ago(20)]);
+  await q(`insert into verification_requests (student_id, method, status, submitted_at, reviewed_by, reviewed_at) values ($1,'id_upload','verified',$2,$3,$2)`, [IDS.ananya, ago(20), IDS.admin]);
 
   const rohanCv = {
     name: "Rohan Mehta",
@@ -140,6 +140,8 @@ export async function seed(q: Q, put: Put) {
   type Prob = {
     n: number; biz: string; title: string; background: string; current: string; problem: string; outcome: string;
     constraints: string; timeline: string; resources: string; cat: Record<string, unknown>; daysAgo: number; raw?: Record<string, unknown>;
+    /** Round 4: the six sharpest problems are pinned to the top of every list (1 = first). */
+    rank?: number;
   };
   const probs: Prob[] = [
     {
@@ -155,14 +157,14 @@ export async function seed(q: Q, put: Put) {
       raw: { type: "voice", transcript: "दुकान में आटा, तेल और दूध के पैकेट बार-बार खत्म हो जाते हैं, और कुछ सामान हफ्तों पड़ा रहता है।" },
     },
     {
-      n: 2, biz: IDS.annapurna, daysAgo: 70,
-      title: "Grow tiffin subscriptions among office workers in Koramangala",
+      n: 2, biz: IDS.annapurna, daysAgo: 70, rank: 1,
+      title: "Launch tiffin subscription plans and reach 100 subscribers",
       background: "Home-style South Indian tiffin service run by four women from a central kitchen in Bengaluru.",
-      current: "New customers come only by word of mouth. Orders are taken on WhatsApp.",
-      problem: "Subscriptions have been flat at about 38 per month for a year even though many offices are nearby.",
-      outcome: "A low-cost plan, tried for one month, that brings steady new monthly subscribers.",
+      current: "New customers come only by word of mouth. Orders are taken one by one on WhatsApp, and there is no fixed plan to sign up for.",
+      problem: "Subscriptions have been flat at about 38 a month for a year, even though many offices in Koramangala are nearby.",
+      outcome: "A weekly and a monthly plan with prices, a WhatsApp sign-up message flow and 3 posts for office WhatsApp groups. Target: 100 subscribers within 8 weeks (38 today).",
       constraints: "Marketing budget under ₹5,000 a month. No paid agency.",
-      timeline: "4–6 weeks to plan and test", resources: "Menu, price list, customer WhatsApp group (with consent), past order sheet.",
+      timeline: "8 weeks", resources: "Menu, price list, customer WhatsApp group (with consent), past order sheet.",
       cat: { sector: "food", problem_type: "marketing", skills: ["Instagram", "Canva", "WhatsApp Business", "Customer interviews"], difficulty: "intermediate", time_needed: "m1_2", work_mode: "hybrid", city: "Bengaluru", related_roles: ["digital-marketer", "social-media-manager", "business-analyst"] },
     },
     {
@@ -177,59 +179,59 @@ export async function seed(q: Q, put: Put) {
       cat: { sector: "food", problem_type: "data", skills: ["Excel", "Forecasting", "Google Sheets"], difficulty: "intermediate", time_needed: "w1_4", work_mode: "remote", city: "Bengaluru", related_roles: ["data-analyst", "operations-analyst"] },
     },
     {
-      n: 4, biz: IDS.pragati, daysAgo: 15,
-      title: "Simple dashboard for our 12 village learning centres",
+      n: 4, biz: IDS.pragati, daysAgo: 15, rank: 6,
+      title: "One-page dashboard for our 12 learning centres",
       background: "Pragati Foundation runs after-school learning centres for children in villages near Kolkata.",
       current: "Each centre sends attendance and test scores as photos of registers on WhatsApp.",
-      problem: "The team cannot see which centres need help until the quarterly review.",
-      outcome: "A weekly dashboard showing attendance and learning levels by centre, easy to update.",
+      problem: "The team cannot see which of the 12 centres need help until the quarterly review.",
+      outcome: "A Google Sheet dashboard of attendance and test scores per centre per month, with a 5-minute data-entry guide for volunteers.",
       constraints: "Volunteers have basic phones. Free tools only.",
       timeline: "6–8 weeks", resources: "Six months of register photos and a typed sample sheet.",
-      cat: { sector: "ngo", problem_type: "data", skills: ["Google Sheets", "Looker Studio", "Data cleaning"], difficulty: "intermediate", time_needed: "m1_2", work_mode: "remote", city: "Kolkata", related_roles: ["data-analyst", "ngo-program-coordinator"] },
+      cat: { sector: "ngo", problem_type: "data", skills: ["Google Sheets", "Data cleaning", "Charts"], difficulty: "intermediate", time_needed: "m1_2", work_mode: "remote", city: "Kolkata", related_roles: ["data-analyst", "ngo-program-coordinator"] },
     },
     {
-      n: 5, biz: IDS.pragati, daysAgo: 6,
-      title: "Write donor stories that bring in monthly givers",
+      n: 5, biz: IDS.pragati, daysAgo: 6, rank: 4,
+      title: "Write 6 donor stories and a template to win monthly givers",
       background: "Pragati depends on small monthly donations from individuals.",
       current: "Updates to donors are long reports sent twice a year.",
-      problem: "Donors drift away because they rarely hear real stories from the centres.",
-      outcome: "Five short, true stories with photos and a monthly email template.",
+      problem: "Donors drift away because they rarely hear real stories from the centres, and few new people start giving every month.",
+      outcome: "Six 150-word stories with photos and a reusable one-page template. Target: 15 new monthly donors within 3 months.",
       constraints: "Children's privacy must be protected; consent from parents is needed for any photo.",
       timeline: "3 weeks", resources: "Field notes, volunteer contacts, photo library with consent forms.",
       cat: { sector: "ngo", problem_type: "content", skills: ["Writing", "Interviewing", "Storytelling"], difficulty: "beginner", time_needed: "w1_4", work_mode: "remote", city: "Kolkata", related_roles: ["content-writer", "journalist"] },
     },
     {
-      n: 6, biz: IDS.kalakriti, daysAgo: 20,
-      title: "Product photos and listings for selling saris online",
+      n: 6, biz: IDS.kalakriti, daysAgo: 20, rank: 3,
+      title: "12 sari photo sets and online listings, ready to publish",
       background: "A cluster of 18 handloom weavers in Ahmedabad selling Patola-style saris.",
       current: "Saris are sold only at exhibitions and through one shop.",
-      problem: "They have started an Instagram page but phone photos look dull and listings have no details.",
-      outcome: "A photo style guide, 20 edited product photos and listing text they can reuse.",
+      problem: "They want to sell on Meesho and Instagram, but phone photos look dull and the 12 saris have no listing details.",
+      outcome: "12 listings, each with 4 edited photos, a title, an 80-word description and a price, ready for Meesho and Instagram.",
       constraints: "Shoot with a phone in natural light. Weavers speak Gujarati.",
-      timeline: "2 weeks", resources: "Access to the workshop on weekends, 20 saris to photograph.",
+      timeline: "2 weeks", resources: "Access to the workshop on weekends, the 12 saris to photograph.",
       cat: { sector: "manufacturing", problem_type: "design_ux", skills: ["Photography", "Canva", "Copywriting"], difficulty: "beginner", time_needed: "w1_4", work_mode: "onsite", city: "Ahmedabad", related_roles: ["graphic-designer", "digital-marketer", "content-writer"] },
     },
     {
-      n: 7, biz: IDS.kalakriti, daysAgo: 30,
-      title: "Work out the true cost of each sari we weave",
-      background: "Kalakriti prices saris by habit and what buyers will pay.",
+      n: 7, biz: IDS.kalakriti, daysAgo: 30, rank: 2,
+      title: "Cost sheet showing the true cost and profit of each of our 12 saris",
+      background: "Kalakriti prices its 12 sari designs by habit and what buyers will pay.",
       current: "Yarn, dye and labour costs are noted in separate notebooks.",
       problem: "Some designs may be sold at a loss, but nobody knows which.",
-      outcome: "A costing sheet per design and suggested minimum prices.",
+      outcome: "A Google Sheet with material, labour and overhead per sari, selling price and profit %, plus a one-page summary of which designs lose money.",
       constraints: "Sheet must be simple enough for the cluster head to update.",
       timeline: "3 weeks", resources: "Purchase bills for the last 6 months, list of designs and weaving days.",
-      cat: { sector: "manufacturing", problem_type: "finance", skills: ["Excel", "Costing", "Pricing"], difficulty: "beginner", time_needed: "w1_4", work_mode: "hybrid", city: "Ahmedabad", related_roles: ["financial-analyst", "accountant", "business-analyst"] },
+      cat: { sector: "manufacturing", problem_type: "finance", skills: ["Google Sheets", "Costing", "Pricing"], difficulty: "beginner", time_needed: "w1_4", work_mode: "hybrid", city: "Ahmedabad", related_roles: ["financial-analyst", "accountant", "business-analyst"] },
     },
     {
-      n: 8, biz: IDS.brightpath, daysAgo: 4,
-      title: "Redesign our fee reminder and payment process",
+      n: 8, biz: IDS.brightpath, daysAgo: 4, rank: 5,
+      title: "Replace our fee reminders with a 3-message WhatsApp flow",
       background: "BrightPath runs coaching classes for 220 school students in Pune.",
       current: "The office calls parents one by one when fees are late. Payments come by cash, UPI and cheque.",
-      problem: "Staff spend two days a month chasing fees and records do not match.",
-      outcome: "A clear process map and a reminder routine that cuts follow-up time in half.",
-      constraints: "Parents must not feel pressured. Use tools the office already has.",
+      problem: "Only 58% of fees are paid on time, and staff spend two days a month chasing the rest by phone.",
+      outcome: "Three reminder messages (before, on and after the due date) in English and Hindi, plus a one-page payment-link guide. Target: on-time payments from 58% to 80%.",
+      constraints: "Parents must not feel pressured. Use WhatsApp Business, which the office already has.",
       timeline: "1 week", resources: "Fee register, sample reminder messages, a call with the office manager.",
-      cat: { sector: "education", problem_type: "operations", skills: ["Process mapping", "Google Sheets", "Communication"], difficulty: "beginner", time_needed: "lt1w", work_mode: "remote", city: "Pune", related_roles: ["operations-analyst", "business-analyst"] },
+      cat: { sector: "education", problem_type: "operations", skills: ["WhatsApp Business", "Copywriting", "Hindi", "Google Sheets"], difficulty: "beginner", time_needed: "lt1w", work_mode: "remote", city: "Pune", related_roles: ["operations-analyst", "business-analyst"] },
     },
     {
       n: 9, biz: IDS.brightpath, daysAgo: 2,
@@ -257,9 +259,9 @@ export async function seed(q: Q, put: Put) {
   for (const p of probs) {
     await q(
       `insert into problems (id, business_id, raw_input, title, background, current_process, problem, desired_outcome, constraints, expected_timeline,
-        resources_provided, categories, status, created_at, live_at)
-       values ($1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,'live',$13,$13)`,
-      [P(p.n), p.biz, J(p.raw ?? { type: "text", text: p.problem }), p.title, p.background, p.current, p.problem, p.outcome, p.constraints, p.timeline, p.resources, J(p.cat), ago(p.daysAgo)],
+        resources_provided, categories, status, created_at, live_at, sort_rank)
+       values ($1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,'live',$13,$13,$14)`,
+      [P(p.n), p.biz, J(p.raw ?? { type: "text", text: p.problem }), p.title, p.background, p.current, p.problem, p.outcome, p.constraints, p.timeline, p.resources, J(p.cat), ago(p.daysAgo), p.rank ?? null],
     );
   }
 
@@ -267,18 +269,18 @@ export async function seed(q: Q, put: Put) {
   const e1 = IDS.engInUse;
   await q(`insert into engagements (id, problem_id, student_id, status, share_token, started_at) values ($1,$2,$3,'in_use','r7m2annapurna9tiffin4k',$4)`, [e1, P(2), IDS.rohan, ago(66)]);
   const chat1: [string, string, number][] = [
-    [IDS.rohan, "Namaste! I'm Rohan, B.Com final year. I'd love to work on growing your subscriptions. Could I visit the kitchen this Saturday?", 65],
+    [IDS.rohan, "Namaste! I'm Rohan, B.Com final year. I'd love to help you launch subscription plans. Could I visit the kitchen this Saturday?", 65],
     [IDS.annapurna, "Welcome Rohan. Yes, come at 11am after the lunch packing. I will share our order sheet.", 65],
     [IDS.rohan, "I spoke to 14 office workers near Sony Signal. Most didn't know a home tiffin was nearby. Price is fine; trial is the barrier.", 58],
     [IDS.annapurna, "That is useful. Can we try a ₹99 trial week?", 57],
-    [IDS.rohan, "Yes! I've drafted a plan with a trial week, office-desk flyers with a QR code and a referral offer. Submitting it now.", 50],
+    [IDS.rohan, "Yes! I've drafted a weekly and a monthly plan, a WhatsApp sign-up flow, 3 posts for office groups and a ₹99 trial week. Submitting it now.", 50],
   ];
   for (const [s, t, d] of chat1) await q(`insert into messages (engagement_id, sender_id, text, created_at) values ($1,$2,$3,$4)`, [e1, s, t, ago(d)]);
   await q(
     `insert into submissions (engagement_id, description, links, files, submitted_at, receipt_confirmed_at) values ($1,$2,$3::jsonb,'[]'::jsonb,$4,$5)`,
     [
       e1,
-      "A one-month growth plan: (1) ₹99 trial week for new office customers, (2) QR flyers left at 9 office receptions in Koramangala, (3) a 'bring a colleague' referral giving one free meal, (4) a WhatsApp Business catalogue with daily menu photos, (5) a simple sheet to track trial-to-subscriber conversion.",
+      "Subscription plans and a launch kit: (1) a weekly plan at ₹1,050 and a monthly plan at ₹3,900, (2) a WhatsApp sign-up message flow (menu → plan → address → payment), (3) three posts for office WhatsApp groups, (4) a ₹99 trial week and QR flyers for 9 office receptions in Koramangala, (5) a 'bring a colleague' referral and a sheet to track trial-to-subscriber conversion.",
       J(["https://docs.google.com/document/d/annapurna-growth-plan", "https://www.canva.com/design/annapurna-flyer"]),
       ago(50),
       ago(49),
@@ -295,12 +297,12 @@ export async function seed(q: Q, put: Put) {
   for (const [w, m, c, d] of ups) await q(`insert into impact_updates (engagement_id, what_changed, metrics, comments, created_at) values ($1,$2,$3::jsonb,$4,$5)`, [e1, w, J(m), c, ago(d)]);
   const reportBase = {
     summary:
-      "Rohan Mehta designed and launched a low-cost growth plan for Annapurna Tiffin Services, a women-run home kitchen in Bengaluru. After interviewing 14 office workers, he found that trying the food — not price — was the barrier. His ₹99 trial week, QR flyers and referral offer have been in daily use for six weeks.",
+      "Rohan Mehta launched weekly and monthly subscription plans for Annapurna Tiffin Services, a women-run home kitchen in Bengaluru, with a WhatsApp sign-up flow. After interviewing 14 office workers, he found that trying the food, not price, was the barrier. His plans, ₹99 trial week and referral offer have been in daily use for six weeks.",
     skills: ["Customer interviews", "Growth marketing", "WhatsApp Business", "Canva", "Conversion tracking", "Small-business strategy"],
   };
   const reports = [
-    { v: 1, d: 45, outcomes: [{ label: "Status", value: "In use in daily operations" }], timeline: [{ date: ago(66), event: "Took up the problem" }, { date: ago(50), event: "Submitted growth plan" }, { date: ago(45), event: "Plan put into daily use" }], bullets: ["Designed a one-month growth plan for a women-run tiffin business after interviewing 14 target customers", "Plan accepted and put into daily use by the business"] },
-    { v: 2, d: 31, outcomes: [{ label: "Subscribers", value: "38 → 49" }, { label: "New trial customers", value: "17 in 2 weeks" }], timeline: [{ date: ago(66), event: "Took up the problem" }, { date: ago(50), event: "Submitted growth plan" }, { date: ago(45), event: "Plan put into daily use" }, { date: ago(31), event: "First impact update: subscribers 38 → 49" }], bullets: ["Designed and launched a ₹99 trial-week offer that brought 17 new customers in 2 weeks", "Grew monthly subscribers from 38 to 49 for a home tiffin business in Bengaluru"] },
+    { v: 1, d: 45, outcomes: [{ label: "Status", value: "In use in daily operations" }], timeline: [{ date: ago(66), event: "Took up the problem" }, { date: ago(50), event: "Submitted subscription plans" }, { date: ago(45), event: "Plans put into daily use" }], bullets: ["Designed weekly and monthly subscription plans and a WhatsApp sign-up flow for a women-run tiffin business after interviewing 14 target customers", "Plans accepted and put into daily use by the business"] },
+    { v: 2, d: 31, outcomes: [{ label: "Subscribers", value: "38 → 49" }, { label: "New trial customers", value: "17 in 2 weeks" }], timeline: [{ date: ago(66), event: "Took up the problem" }, { date: ago(50), event: "Submitted subscription plans" }, { date: ago(45), event: "Plans put into daily use" }, { date: ago(31), event: "First impact update: subscribers 38 → 49" }], bullets: ["Designed and launched a ₹99 trial-week offer that brought 17 new customers in 2 weeks", "Grew monthly subscribers from 38 to 49 for a home tiffin business in Bengaluru"] },
   ];
   for (const r of reports) {
     await q(
@@ -326,17 +328,17 @@ export async function seed(q: Q, put: Put) {
       J([
         { date: ago(66), event: "Took up the problem" },
         { date: ago(58), event: "Interviewed 14 office workers near the kitchen" },
-        { date: ago(50), event: "Submitted a one-month growth plan" },
-        { date: ago(45), event: "Plan put into daily use" },
+        { date: ago(50), event: "Submitted subscription plans and a WhatsApp sign-up flow" },
+        { date: ago(45), event: "Plans put into daily use" },
         { date: ago(31), event: "Subscribers 38 → 49" },
         { date: ago(17), event: "Subscribers 49 → 63, revenue +₹21,000/month" },
         { date: ago(3), event: "Subscribers 63 → 81, second office complex added" },
       ]),
       J([
-        "Grew monthly subscriptions for a women-run tiffin business from 38 to 81 (+113%) in six weeks with a ₹1,800 budget",
+        "Launched subscription plans that grew a women-run tiffin business from 38 to 81 monthly subscribers (+113%) in six weeks with a ₹1,800 budget",
         "Interviewed 14 target customers and found trial, not price, was the barrier; designed a ₹99 trial week with a 58% conversion rate",
         "Set up a WhatsApp Business catalogue and referral offer that cut daily order-taking time by 30 minutes",
-        "Added about ₹36,000 in monthly revenue for an MSME, with the plan still in daily use",
+        "Added about ₹36,000 in monthly revenue for an MSME, with the plans still in daily use",
       ]),
       ago(3),
     ],
@@ -353,7 +355,7 @@ export async function seed(q: Q, put: Put) {
   for (const [s, t, d] of chat2) await q(`insert into messages (engagement_id, sender_id, text, created_at) values ($1,$2,$3,$4)`, [e2, s, t, ago(d)]);
   await q(
     `insert into submissions (engagement_id, description, links, files, submitted_at) values ($1,$2,$3::jsonb,'[]'::jsonb,$4)`,
-    [e2, "A costing sheet for all 11 designs: yarn, dye, weaving days and finishing per sari, with a suggested minimum price. Three designs are currently sold below cost.", J(["https://docs.google.com/spreadsheets/d/kalakriti-costing"]), ago(1)],
+    [e2, "A Google Sheet for all 12 saris: material, labour and overhead per sari, selling price and profit %, with a one-page summary. Three designs are currently sold below cost.", J(["https://docs.google.com/spreadsheets/d/kalakriti-costing"]), ago(1)],
   );
   for (const [s, d] of [["taken_up", 14], ["in_progress", 13], ["submitted", 1]] as [string, number][]) {
     await q(`insert into status_changes (engagement_id, status, created_at) values ($1,$2,$3)`, [e2, s, ago(d)]);
@@ -373,11 +375,37 @@ export async function seed(q: Q, put: Put) {
     await q(`insert into roadmap_progress (student_id, role, completed_step_ids, statuses) values ($1,$2,$3::jsonb,$4::jsonb)`, [IDS.rohan, role, J(done), J(st)]);
   }
 
+  // ---------- Rohan's cached problem ranking (decision 14 cache, round 4) ----------
+  // Seeded so the demo order is stable and costs no Gemini call. The sharper top-six problems come first wherever they fit his paths.
+  const rohanApproved = (await q(`select approved_at from student_profiles where user_id = $1`, [IDS.rohan]))[0] as { approved_at: string | Date };
+  const ranked: [number, number, string][] = [
+    [2, 92, "ai|now|Digital Marketer|Your Instagram and Canva work fits a subscription launch."],
+    [7, 90, "ai|now|Accountant|Your Tally and GST practice fits a per-sari cost sheet."],
+    [6, 86, "ai|now|Digital Marketer|Your Canva skills fit photo sets and online listings."],
+    [8, 82, "ai|pivot|Business Analyst|Mapping the fee process builds on your commerce basics."],
+    [5, 70, "ai|pivot|Social Media Manager|Short donor stories build on your fest Instagram writing."],
+    [4, 68, "Uses your Excel and basic SQL to turn registers into one clear sheet."],
+    [3, 50, "Uses your Excel to forecast daily orders for a kitchen you know."],
+    [1, 60, "Builds on keeping stock and bills for your family's shop."],
+    [10, 30, "A research project, a stretch from your current skills."],
+    [9, 25, "A web design project, far from your current paths."],
+  ];
+  await q(`insert into ai_cache (key, value) values ($1,$2::jsonb) on conflict (key) do update set value = excluded.value, created_at = now()`, [
+    `match:${IDS.rohan}:v4`,
+    J({
+      approvedAt: new Date(rohanApproved.approved_at).toISOString(),
+      ids: probs.map((p) => P(p.n)).sort(),
+      at: now,
+      ai: true,
+      ranked: ranked.map(([n, score, reason]) => ({ id: P(n), score, reason })).sort((a, b) => b.score - a.score),
+    }),
+  ]);
+
   // ---------- notifications ----------
   const notes: [string, string, Record<string, unknown>, number, boolean][] = [
-    [IDS.rohan, "report_regenerated", { engagementId: e1, title: "Grow tiffin subscriptions among office workers in Koramangala" }, 3, false],
-    [IDS.rohan, "impact_update", { engagementId: e1, title: "Grow tiffin subscriptions among office workers in Koramangala" }, 3, true],
-    [IDS.kalakriti, "submitted", { engagementId: e2, title: "Work out the true cost of each sari we weave", student: "Rohan Mehta" }, 1, false],
+    [IDS.rohan, "report_regenerated", { engagementId: e1, title: "Launch tiffin subscription plans and reach 100 subscribers" }, 3, false],
+    [IDS.rohan, "impact_update", { engagementId: e1, title: "Launch tiffin subscription plans and reach 100 subscribers" }, 3, true],
+    [IDS.kalakriti, "submitted", { engagementId: e2, title: "Cost sheet showing the true cost and profit of each of our 12 saris", student: "Rohan Mehta" }, 1, false],
     [IDS.admin, "verification_requested", { student: "Meera Pillai" }, 0, false],
   ];
   for (const [u, t, p, d, r] of notes) await q(`insert into notifications (user_id, type, payload, read, created_at) values ($1,$2,$3::jsonb,$4,$5)`, [u, t, J(p), r, ago(d)]);
@@ -386,6 +414,7 @@ export async function seed(q: Q, put: Put) {
 // Removes only the seeded demo accounts (and everything that cascades from them), then the seed can run again.
 export const RESET_SQL = `
 update verification_requests set reviewed_by = null where reviewed_by in (select id from users where email like '%@kadam.example');
+delete from ai_cache where key like 'match:00000000-0000-4000-8000-0000000001%' or key like 'gap:00000000-0000-4000-8000-0000000001%';
 delete from users where email like '%@kadam.example';
 delete from roadmaps where source = 'seed';
 delete from blobs where path like 'student-ids/ids/meera-%';
