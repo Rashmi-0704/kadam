@@ -26,7 +26,7 @@ export default async function BusinessesHome() {
       <LandingHero
         focus="business"
         tagline={t("landing.tagline")}
-        strip={{ text: t("strip.student"), href: "/students" }}
+        strip={{ text: t("strip.student"), href: "/" }}
         eyebrow={t("bl.eyebrow")}
         h1={t("bl.h1")}
         accent={t("bl.h1_accent")}
@@ -38,7 +38,7 @@ export default async function BusinessesHome() {
         login={t("landing.login")}
         loginHref="/auth?as=business"
         switchLabel={t("bl.switch")}
-        switchHref="/start/student"
+        switchHref="/"
         showLanguage
         words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]}
       />
@@ -123,7 +123,7 @@ export default async function BusinessesHome() {
       <footer className="border-t-2 border-line bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm text-ink-2">
           <LockUp tagline={t("landing.tagline")} />
-          <Link href="/students" className="font-semibold underline underline-offset-4 hover:text-primary-deep">{t("bl.not_business")}</Link>
+          <Link href="/" className="font-semibold underline underline-offset-4 hover:text-primary-deep">{t("bl.not_business")}</Link>
         </div>
       </footer>
     </div>

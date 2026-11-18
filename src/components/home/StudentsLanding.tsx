@@ -46,8 +46,8 @@ export async function StudentsLanding() {
         secondaryHref="#how"
         login="Log in"
         loginHref="/auth?as=student"
-        switchLabel="I run a business or NGO instead →"
-        switchHref="/start/business"
+        switchLabel="I run a business or NGO →"
+        switchHref="/businesses"
         showLanguage={false}
         words={["Real problems", "Real solutions", "Real impact", "Take your first step"]}
       />
