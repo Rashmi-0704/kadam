@@ -52,7 +52,7 @@ export default async function AdminVerifications({ searchParams }: { searchParam
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-lg font-bold">{p.name}</p>
-                        <p className="text-sm text-ink-2">{[p.course, p.year, p.college].filter(Boolean).join(" · ")}</p>
+                        <p className="text-sm text-ink-2">{[p.course, p.year, p.college].filter((x) => typeof x === "string" && x.trim()).join(" · ")}</p>
                         <p className="text-xs text-ink-3">{p.email}</p>
                       </div>
                       {p.status === "verified" ? <span className="chip shrink-0 border-success/30 bg-success-soft text-success-ink">Auto-verified</span> : <span className={`chip shrink-0 ${hoursLeft < 12 ? "border-alert/30 bg-alert-soft text-alert" : ""}`}>{t("admin.hours_left", { n: hoursLeft })}</span>}

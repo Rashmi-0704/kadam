@@ -21,7 +21,9 @@ export default async function BusinessWorkspace({ params }: { params: Promise<{ 
   const t = await getT();
   const lang = await getLang();
   const { e } = ws;
-  const sp = await one(`select college, course, year from student_profiles where user_id = $1`, [e.student_id]);
+  const sp = await one(`select college, course, year, verification_status from student_profiles where user_id = $1`, [e.student_id]);
+  // Round 5: leave out whatever is missing; never a stray separator.
+  const about = sp ? [sp.course, sp.year, sp.college].filter((x) => typeof x === "string" && x.trim()).join(", ") : "";
   const tracking = ["accepted", "in_use"].includes(e.status);
   return (
     <div>
@@ -29,7 +31,8 @@ export default async function BusinessWorkspace({ params }: { params: Promise<{ 
       <div className="mb-5">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <StatusBadge status={e.status} t={t} />
-          <span className="text-sm text-ink-3">{e.student_name}{sp ? ` · ${[sp.course, sp.year, sp.college].filter(Boolean).join(", ")}` : ""}</span>
+          <span className="text-sm text-ink-3">{[e.student_name, about].filter(Boolean).join(" · ")}</span>
+          {sp?.verification_status === "verified" && <span className="chip border-success/30 bg-success-soft text-success-ink">✓ {t("bv.id_checked")}</span>}
         </div>
         <h1 className="text-2xl leading-tight font-bold sm:text-3xl">
           <Link href={`/business/problems/${e.problem_id}`} className="hover:underline">{e.problem_title}</Link>

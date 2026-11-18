@@ -21,7 +21,7 @@ export default async function BusinessProblem({ params, searchParams }: { params
   const t = await getT();
   const lang = await getLang();
   const engagements = await q(
-    `select e.id, e.status, e.started_at, s.name, sp.college, sp.course,
+    `select e.id, e.status, e.started_at, s.name, sp.college, sp.course, sp.verification_status,
             (select submitted_at from submissions x where x.engagement_id = e.id order by submitted_at desc limit 1) as submitted_at
        from engagements e join users s on s.id = e.student_id left join student_profiles sp on sp.user_id = e.student_id
       where e.problem_id = $1 order by e.started_at desc`,
@@ -68,8 +68,8 @@ export default async function BusinessProblem({ params, searchParams }: { params
                       <span className="flex min-w-0 items-center gap-3">
                         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-info-soft font-bold text-info">{String(e.name ?? "?")[0]}</span>
                         <span className="min-w-0">
-                          <span className="block font-bold">{e.name}</span>
-                          <span className="block truncate text-sm text-ink-3">{[e.course, e.college].filter(Boolean).join(" · ")}</span>
+                          <span className="block font-bold">{e.name}{e.verification_status === "verified" && <span className="ml-2 align-middle text-xs font-semibold text-success-ink">✓ {t("bv.id_checked")}</span>}</span>
+                          {[e.course, e.college].some((x) => x?.trim()) && <span className="block truncate text-sm text-ink-3">{[e.course, e.college].filter((x) => x?.trim()).join(" · ")}</span>}
                           <span className="block text-xs text-ink-3">{e.submitted_at ? t("bp.submitted_on", { date: fmtDate(e.submitted_at, lang) }) : t("bp.started_on", { date: fmtDate(e.started_at, lang) })}</span>
                         </span>
                       </span>
