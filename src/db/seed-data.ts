@@ -394,7 +394,9 @@ export async function seed(q: Q, put: Put) {
     `match:${IDS.rohan}:v4`,
     J({
       approvedAt: new Date(rohanApproved.approved_at).toISOString(),
-      ids: probs.map((p) => P(p.n)).sort(),
+      // Every live problem, including real businesses' ones that survive a reset, so the cache counts as current
+      // and isn't re-ranked an hour later. Problems not in `ranked` are scored by rules when read (lib/matching.ts).
+      ids: ((await q(`select id from problems where status = 'live'`)) as { id: string }[]).map((r) => r.id).sort(),
       at: now,
       ai: true,
       ranked: ranked.map(([n, score, reason]) => ({ id: P(n), score, reason })).sort((a, b) => b.score - a.score),
