@@ -370,3 +370,10 @@ Numbered so they can be merged into docs/BUILD_LOG.md after decision 45.
 
 ### Notes
 99. **Pre-existing, not changed:** on `/businesses` at 390 px, the tilted card behind `<VoiceDemo>` sticks out by about 8 px and allows a small sideways scroll. It was there before round 3 and isn't in this prompt.
+
+### Round 3 checks (18 Nov 2026)
+- `tsc --noEmit`, `eslint src` and `node scripts/missing-keys.mjs`: clean. `next build`: passes. `node scripts/test-first-password.ts`: 9/9.
+- Local (PGlite, DEMO_MODE), 390×844 and 1440×900, reduced motion on and off, on `/`, `/students` and `/businesses`: 5 word rows on laptop and 4 on phones, animating with motion on and still with it off; no floating role tags; old band gone; no reveal left hidden after scrolling. The trail made boxes over empty sky and 0 boxes over the headline and buttons; 12 pooled boxes with motion on, none with it off.
+- Dashboards checked locally as Rohan, Ananya (empty profile, the nearest to a new student) and Annapurna (Hindi), on phone and laptop. A brand-new business was checked by code path only, since the local database can't create a password account.
+- Deployed (commit 9383fde, Vercel deployed automatically from this collaborator's push): the live heroes serve the new rows; "Joined with an email link before?" answers "already has a password" for an email with no old account; Rohan's dashboard shows Suggested for you from the cached ranking; Annapurna's dashboard is fully in Hindi; every student and business page linked from the dashboards returns 200 with no error. Demo accounts were reset afterwards.
+- Not tested on the live site: typing passwords (my browser rules forbid entering passwords on a production site), so the full set-password flow on a real old account is a manual check for the team.
