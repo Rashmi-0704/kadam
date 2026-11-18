@@ -323,3 +323,50 @@ Numbered so they can be merged into docs/BUILD_LOG.md after decision 45.
 6. **Clean-up:** demo accounts reset again, and the QA accounts were removed with `scripts/qa-cleanup.mjs` (1 account).
 
 **Real-account sign-up/sign-in was tested on the local server, not on the live site.** The local server uses the same code and the same Supabase project. My browser rules do not let me type passwords into a production site, so the live password test is a manual step for the team (see the final report).
+
+## Round 3 (18 Nov 2026, from a collaborator's laptop)
+
+### Setup
+69. **The repo's default branch is `master`, not `main`.** The round-3 prompt says `main`; the work was pulled from and pushed to `master`, which is the branch Vercel deploys.
+70. **No secrets on this laptop.** Its Vercel CLI has no access to the `mesa-90a8` team, so `vercel env pull` was not possible. Local work used the PGlite fallback with a local, git-ignored `.env.local` containing only `DEMO_MODE=true`. Anything that needs Supabase Auth or Gemini was checked on the deployed site.
+
+### 1. Old link-made accounts (no password)
+71. **`hasNoPassword(email)`** (`src/lib/legacy-auth.ts`) reads `auth.users.encrypted_password` through the server's database connection. A row with a null or empty password is "old". If the `auth` schema can't be read (local PGlite), it returns `false`, so the normal flow runs. Every step re-checks on the server.
+72. **Sign in** with a wrong password on an old account opens "Set your password" instead of an error. **Sign up** with an old account's email does the same (checked before `createUser`, so it never says "account exists").
+73. **`setFirstPassword`** validates with zod (same `Password` rule as sign-up), re-checks `hasNoPassword`, finds the auth user (SQL first, admin `listUsers` as a fallback), calls `updateUserById(id, { password, email_confirm: true })`, signs in, records `users.password_set_at`, logs `[auth] first password set <email>` (never the password) and continues with `startSession`. The logic lives in `src/lib/first-password.ts` with injected dependencies; `node scripts/test-first-password.ts` checks it with mocks (9 checks).
+74. **"Joined with an email link before? Set your password →"** under Sign in asks for the email only. An old account opens the set-password step; anything else gets "This account already has a password. Sign in with it."
+75. `err.password_wrong_or_old` was removed from the code and all seven locale files. Accounts that do have a password get the plain `err.password_wrong`.
+76. **`users.password_set_at`** is added in three places: `UPGRADE_SQL` (applied on every start, so the live database gets it on the next cold start), the canonical `SCHEMA_SQL`, and `supabase/migrations/20261118000000_password_set_at.sql`. It is nullable, so older code keeps working.
+77. **Admin "Sign-in help"** on `/admin/verifications` (English only): every account with no password (name, email, role, joined date, "No password yet") with an inline reset, plus a search by email for any non-admin account. The admin types a temporary password (8+ characters) and tells the owner by phone or WhatsApp. The admin account itself is refused; only `ADMIN_EMAIL` / `ADMIN_PASSWORD` control it. Resets also set `password_set_at`.
+78. **Accepted risk.** Someone who knows an old account's email could set its password before the real owner. Accepted for the hackathon: there are only a few old accounts, it works once per account and only while no password exists. The automated security review flagged this as account takeover; it stays as decided. **Proper fix later:** custom SMTP in Supabase plus a real "Forgot password" email (`resetPasswordForEmail`), then remove the self-service step.
+79. **No auth emails anywhere.** A search for `signInWithOtp`, `resend`, `inviteUserByEmail`, `generateLink`, `resetPasswordForEmail` and email change found only `scripts/qa-link.mjs` (a magic-link QA helper whose routes no longer exist). It was deleted.
+
+### 2. Hero word rows
+80. **`<HeroWords>`** (`src/components/motion/HeroWords.tsx`) replaces `<WordMarquee>` and the band below the hero on `/students` and `/businesses`; it also sits behind the welcome screen on `/`. The problem-title ticker on `/students` stays. The `wm.*` keys were removed; `hw.p1`–`hw.p4` were added in all seven languages. `/students` passes English.
+81. Five rows (the fifth is hidden under 640 px), `justify-evenly` over the hero's full height, starting at Real problems / Real impact / Take your first step / Real solutions / Real problems, directions left/right/left/right/left, 60/75/65/80/70 s. Each half repeats the sequence three times, so it is always wider than two screens. Solid rows are indigo at 7 %, outlined rows have a 1.5 px indigo stroke at 14 % (6 % solid fallback), and the ✦ is coral at 18 % with no stroke. Layer order: canvas, scene, gradient fade, word rows, trail, content. `.hw-rows` is paused off-screen by `<MotionPauser>`; reduced motion keeps the rows still.
+
+### 3. Role trail
+82. **Floating role tags removed** from `KadamScene` together with their intro tween, float loops and parallax layer. The 4 static pills under reduced motion are gone too: reduced motion shows no trail at all.
+83. **`<RoleTrail>` rewritten** with the exact numbers from the prompt: ≥ 60 px and ≥ 50 ms between boxes, 120 ms in, 900 ms hold, 300 ms out, at most 10 visible, a pool of 12 elements, Web Animations API (transform and opacity only), one pointer check per animation frame, passive listeners, IntersectionObserver to drop listeners while the hero is off-screen. Roles come from `src/db/trail-roles.ts` (50, shuffled, no repeats until all have shown). Every 4th box is the coral accent.
+84. **The connecting line drops a box's point when that box starts fading**, not when it disappears, so the dashed line visibly shrinks with the trail. When an 11th box appears, the oldest visible one fades out over 300 ms from where it is.
+85. **Blocked areas:** `[data-trail-block]` on the header, eyebrow, headline, paragraph, each button and link, the role cards, the hero card, and the drawn shapes of the scene (each tower, shop, step, the flag and the person). Boxes are cached and re-measured on resize, scroll, font load and once 2.2 s after mount, because the hero's entrance animation moves the text for about 2 s. Block-level elements block their full box, so a little empty space beside a short line also blocks; the welcome headline, paragraph and note are `w-fit` to keep that small.
+86. **Touch:** `pointermove` stops when the browser starts scrolling, so touch uses passive `touchstart` / `touchmove` instead. A tap resets the distance rule so one box appears. Scrolling is never blocked.
+
+### 4. Reveals and count-ups
+87. **One shared `<Reveal>`** (`src/components/motion/Reveal.tsx`, GSAP ScrollTrigger) and **`<CountUp>`** (`src/components/motion/CountUp.tsx`). `scene/Motion.tsx` re-exports both so older imports keep working; the old versions were deleted. A section with `[data-reveal]` items staggers those items (80 ms, first 8); otherwise the section itself fades up. Content is visible without JavaScript, a 6 s safety timer shows anything not yet revealed, and reduced motion skips everything.
+88. Applied to every section below the hero on both homepages (the FAQ, the interest-path picker and the business trust strip were added), the problem list cards, the insight tiles and every dashboard section. `CountUp` starts when the number first enters the screen and never counts a 0.
+
+### 5–6. Dashboards
+89. **Suggested for you** reads only the cached ranking (`match:<user>:v4` in `ai_cache`), skipping problems the student already took. With no cache (or no approved paths) it shows the 3 newest live problems titled "New problems". The dashboards call no AI: their only data is SQL over existing tables and that cache.
+90. **Student next step** follows the prompt's order. When none of the six applies (for example, everything is submitted and no roadmap is open), it shows "Take on another problem", so a card is always present.
+91. **Student progress line:** Taken (taken_up) → Working (in_progress, needs_changes) → Submitted (submitted, received; rejected also stops here) → Accepted / In use. Withdrawn rows show no line.
+92. **Business progress line per problem:** Draft → Live → Students working (any taker) → Work submitted (submitted, received, needs_changes or rejected) → In use (accepted or in_use). Drafts now appear as cards in "Your problems" at the Draft step, instead of a separate list; the links are unchanged.
+93. **Recent activity** unions engagements (took up), submissions (work submitted), status_changes (accepted and in use) and impact_reports (report updated), newest 8, with `timeAgo`.
+94. **Headline number** of a report = its first outcome with a digit that isn't the "Status" row, shown as "value label" (for example "38 → 81 (+113%) monthly subscribers").
+95. **Progress rings** grow with `stroke-dashoffset` on one SVG circle, once, when first visible. This is the one exception to "transform and opacity only", because an arc can't grow with either. The markup already shows the real value, and reduced motion shows it at once.
+96. **Tip card:** one of six fixed English tips, changing daily.
+97. **One main indigo button per screen:** the next-step button is primary; section, help-card and empty-state buttons are secondary. The per-item buttons in "Needs your action" stay primary, as the prompt asks.
+98. The business banner shows the greeting and status line only (the business name eyebrow was dropped from the old header).
+
+### Notes
+99. **Pre-existing, not changed:** on `/businesses` at 390 px, the tilted card behind `<VoiceDemo>` sticks out by about 8 px and allows a small sideways scroll. It was there before round 3 and isn't in this prompt.
