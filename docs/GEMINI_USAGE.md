@@ -38,6 +38,7 @@ When the first key gets a 401, 403, 429, 500 or 503, the second key is tried. Ea
 
 | Function (feature) | Called from (file → action or page) | Trigger | Calls per user action | Cached, and for how long | When it fails |
 |---|---|---|---|---|---|
+| `readStudentId` (read_id), round 4: reads **college, course and year** from a student ID photo or PDF | `src/app/actions/student.ts` → `uploadAndReadId` (onboarding) | Student uploads an ID | **1 per upload**, at most 3 per student per day, and a lock so a double tap runs it once. The file is sent inline the same way `readCv` sends scans. Never asks for the name, ID number, date of birth, address or photo. | Not cached: the student confirms the three fields and they're saved on the profile. Extracted values are never logged. | Empty editable fields with "We couldn't read your ID automatically." Also used when the model says the file doesn't look like a student ID. |
 | `readCv` (cv): reads the CV **and writes the first intake question** | `src/app/actions/student.ts` → `uploadCv` | Student uploads or pastes a CV | 1. Text is extracted locally first; the file itself is sent only for photos and scans with no readable text. | Stored in `student_profiles.cv_parsed` until the student uploads again or starts over | Rule-based skill lexicon; the first question comes from the fixed list (`intake.q1`) |
 | `intakeNext` (intake) | `student.ts` → `answerCareerIntake` | Each intake answer | 1 per answer, **at most 3** (questions 2–4). Skipped after the 4th answer, or when the model marked its last question `final`. | Transcript stored on the profile | Next fixed question (`intake.q2–q4`); the result carries `aiBusy: true` on a rate limit |
 | `finishIntake` (pathways): pathways, plus the summary when needed | `student.ts` → `answerCareerIntake` (last answer) or `finishCareerIntakeNow` ("Build my profile now"); `actions/ai.ts` → `retryPathways` | Intake finished | **Exactly 1 per finished intake.** "Build my profile now" does nothing if pathways already exist (plus a lock). | `student_profiles.pathways` until restart or a new CV | Rule-based pathways. If the AI was busy, a `busy:pathways:<user>` flag shows the notice and **Try again** (1 call). |
@@ -66,19 +67,20 @@ Not Gemini: `src/lib/jobs.ts` fetches job pages (plain HTTP, cached in `ai_cache
 
 ## One full demo walkthrough (section 10 of the context file and the BUILD_LOG "Live AI walk")
 
-The steps follow the live walk: a Hindi kirana problem with 4 follow-ups → draft → live. Ananya's CV → intake → pathways → approve. Suggested → problem page with skill gaps → take up → chat → submit. Business confirms receipt, sets In use and posts an impact update, all within a few minutes.
+The steps follow the live walk: a Hindi kirana problem with 4 follow-ups → draft → live. A new student adds their ID (round 4: 1 call). Ananya's CV → intake → pathways → approve. Suggested → problem page with skill gaps → take up → chat → submit. Business confirms receipt, sets In use and posts an impact update, all within a few minutes.
 
 | Step | Before | After (worst case) | After (typical) |
 |---|---|---|---|
 | Business intake | start 1 + 3 answers → questions 2–4 (3) + 4th answer → `done` (1) = **5** | start 1 + 3 follow-ups (3); the 4th answer goes straight to the draft = **4** | 2 questions that each ask two things, the 2nd marked `final` → **2** |
 | Draft | **1** | **1** | **1** |
+| Student ID (round 4) | — | **1** | **1** |
 | CV upload | parseCv 1 + first question 1 = **2** | readCv with first question = **1** | **1** |
 | Student intake | Old prompt allowed 4–6 answers; at 5 answers: questions 2–5 (4) + `done` (1) = **5** | questions 2–4 = **3** | 2 (3rd question marked `final`) |
 | Pathways | **1** | **1** (also writes the summary) | **1** |
 | Suggested (match) | **1** | **1** | **1** |
 | Problem page (skill gaps) | **1** | **1** | **1** |
 | Impact report (receipt + In use + update) | 3 updates → **3** | all within one 2-minute window → **1** | **1** |
-| **Total** | **19** | **13** | **10** |
+| **Total** | **19** | **14** (13 + the ID reader) | **11** (10 + the ID reader) |
 
 How the "Before" column is counted: the old code made one call per intake turn including the turn that only returned `done=true`, one call for the first question on top of the CV reading, and one report call per business update. Optional extras in the live walk (an AI roadmap for DevOps) are 1 call before and 1 after (cached for good).
 

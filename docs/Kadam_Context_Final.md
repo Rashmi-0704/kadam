@@ -80,12 +80,11 @@ flowchart TD
 
 ### 5.3 Student side
 
-**S1. Onboarding and verification**
-- Basic details: name, college, course, year.
-- Verification uses either route:
-  - **College email OTP:** verifies the student instantly.
-  - **Student ID upload:** a photo or PDF that goes to the admin queue for **manual review within 72 hours**.
-- **Unverified students** can build their profile and roadmap and browse problems, but **can't take up a problem.**
+**S1. Onboarding and verification (updated in round 4)**
+- **ID only, one screen.** Sign-up already has the name, so onboarding asks for just one thing: a photo or PDF of the student ID. The upload starts on its own, Gemini reads the **college, course and year** from it (`readStudentId`, one call), and the student checks them in three editable fields and presses **Continue**. If the card can't be read, the same fields appear empty to fill in.
+- **Instant verification.** The upload marks the student verified at once, so taking up a problem is never blocked by a wait. The ID stays in private storage; only the admin can open it. The admin queue ("IDs to check") still lists every new upload, and the admin can **reject** one with a reason; the student then sees the reason and adds a new ID before taking up again.
+- **Take up is never locked.** The button always reads "Take up this problem". A student without a verified ID is taken to the ID screen with a line naming the problem, and **Continue finishes that take-up** and opens the new engagement (chat with the business). Students whose older uploads are still "pending" can also take up.
+- The college-email route was removed. The CV stays optional and never blocks taking up.
 
 **S2. AI career pathway profile [AI-1]**
 - The student uploads a CV, and the AI reads it.
@@ -229,14 +228,14 @@ flowchart LR
 
 | Area | Route | Purpose |
 |---|---|---|
-| Shared | `/` | Landing page with language toggle and log in / sign up |
+| Shared | `/` | The student landing page (same page as `/students`); a business-cookie visitor goes to `/businesses`, a signed-in user to their dashboard |
 | Shared | `/auth` | Log in, sign up, OTP, role selection, consent |
 | Shared | `/settings` | Language, profile, consent |
-| Student | `/student/onboarding` | Details, plus verification choice (college email OTP or ID upload) and a pending state |
+| Student | `/student/onboarding` | One card: upload the student ID → read college, course and year → Continue (finishes a pending take-up when `?intent=takeup`) |
 | Student | `/student/profile` | CV upload → AI intake chat → Now/Pivot/Stretch pathways → edit and approve |
 | Student | `/student/roadmaps`, `/student/roadmaps/:role` | Roadmap list, plus a roadmap.sh-style step view with progress |
 | Student | `/student/problems` | Browse, filter, the "Suggested for you" tab, taker counts |
-| Student | `/student/problems/:id` | Problem detail, skills to brush up, **Take up** (locked until verified) |
+| Student | `/student/problems/:id` | Problem detail, skills to brush up, **Take up** (never locked; sends an unverified student to the ID screen first) |
 | Student | `/student/engagements/:id` | Chat with files, submit solution, current status, withdraw |
 | Student | `/student/dashboard` | All engagements, statuses, rejection reasons, reports, roadmap progress |
 | Student | `/reports/:shareToken` | Impact report: public share view and PDF |
@@ -246,7 +245,7 @@ flowchart LR
 | Business | `/business/dashboard` | My problems, taker counts, close to new takers |
 | Business | `/business/problems/:id` | Engaged students and their submissions |
 | Business | `/business/engagements/:id` | Chat, view submission, confirm receipt, set status (reason required for Rejected), post impact update |
-| Admin | `/admin/verifications` | ID review queue: approve or reject |
+| Admin | `/admin/verifications` | "IDs to check": auto-verified uploads to look over; reject with a reason |
 
 ### 6.3 Reusable UI components
 
@@ -293,8 +292,8 @@ flowchart LR
 ### 6.5 Status lifecycles
 
 ```
-Verification:  not_started → pending (ID upload) → verified | rejected
-               not_started → verified (college email OTP)
+Verification:  not_started → verified (ID upload, instant) → rejected (admin, with a reason) → verified (new upload)
+               older uploads: pending → verified | rejected (pending may take up problems)
 
 Problem:       draft → live → closed (to new takers)
 
@@ -351,8 +350,9 @@ Engagement:    taken_up → in_progress → submitted → received
 | Focus | Student-first. The business side is a bonus. |
 | Business users | MSMEs, SMEs, startups, NGOs and informal businesses. No ID needed to join. |
 | Solutions | Can be non-software. |
-| Student verification | College email OTP, or ID upload with manual review within 72 hours. |
-| Unverified students | Can browse and build a profile and roadmap, but can't take up problems. |
+| Student verification | Student ID upload only, verified instantly; the admin checks IDs afterwards and can reject with a reason (round 4). |
+| Unverified students | Never see a locked button: Take up sends them to add their ID, and Continue finishes the take-up (round 4). |
+| Landing page | One page at `/` (also `/students`); businesses have `/businesses` (round 4). |
 | Login | One login, then choose a role. Email OTP only for the MVP. |
 | Tech stack | Free stack: Next.js + Tailwind, Supabase, Vercel, Gemini free tier, Sarvam STT, designed in Claude Design, polished with Impeccable. |
 | Multiple takers | Allowed. The count is shown on the problem card. |
