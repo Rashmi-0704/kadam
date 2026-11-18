@@ -1,4 +1,5 @@
 "use client";
+import { Reveal } from "@/components/motion/Reveal";
 import { useState } from "react";
 import Link from "next/link";
 import { HighlightPill } from "@/components/motion/Highlight";
@@ -45,7 +46,7 @@ export function InterestPaths() {
     return { ...t, roles };
   });
   return (
-    <section className="mx-auto max-w-6xl px-4 py-20" aria-labelledby="ip-title">
+    <Reveal as="section" className="mx-auto max-w-6xl px-4 py-20" aria-labelledby="ip-title">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
         <div>
           <p className="eyebrow">Try it</p>
@@ -82,6 +83,6 @@ export function InterestPaths() {
           <Link href="/auth?as=student" className="btn-primary w-full sm:w-auto">Find my real paths →</Link>
         </div>
       </div>
-    </section>
+    </Reveal>
   );
 }

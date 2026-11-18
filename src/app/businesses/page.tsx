@@ -44,11 +44,11 @@ export default async function BusinessesHome() {
       />
 
       <section className="border-b border-line bg-mist">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-5 text-sm font-semibold text-ink-2">
+        <Reveal className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-5 text-sm font-semibold text-ink-2">
           {["bl.trust1", "bl.trust2", "bl.trust3", "bl.trust4"].map((k) => (
-            <span key={k} className="inline-flex items-center gap-2"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-success-ink text-[11px] text-white">✓</span>{t(k)}</span>
+            <span key={k} data-reveal className="inline-flex items-center gap-2"><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-success-ink text-[11px] text-white">✓</span>{t(k)}</span>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       <section id="how" className="scroll-mt-4">

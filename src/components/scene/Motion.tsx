@@ -6,31 +6,11 @@ import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const motionOk = "(prefers-reduced-motion: no-preference)";
+// The shared reveal and count-up live in components/motion; re-exported so older imports keep working.
+export { Reveal } from "@/components/motion/Reveal";
+export { CountUp } from "@/components/motion/CountUp";
 
-/** Reveals every [data-reveal] child as it scrolls into view. */
-export function Reveal({ children, className = "", stagger = 0.12, y = 40 }: { children: React.ReactNode; className?: string; stagger?: number; y?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add(motionOk, () => {
-        const items = gsap.utils.toArray<HTMLElement>("[data-reveal]");
-        gsap.set(items, { opacity: 0, y });
-        ScrollTrigger.batch(items, {
-          start: "top 88%",
-          once: true,
-          onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger }),
-        });
-        // Content must never stay hidden: anything not revealed within 4 s (or if scrolling is unusual) is shown.
-        const safety = window.setTimeout(() => gsap.set(items, { opacity: 1, y: 0 }), 4000);
-        return () => window.clearTimeout(safety);
-      });
-    },
-    { scope: ref },
-  );
-  return <div ref={ref} className={className}>{children}</div>;
-}
+const motionOk = "(prefers-reduced-motion: no-preference)";
 
 /** Headline that rises in word by word. */
 export function SplitHeading({ text, accent, className = "", as: Tag = "h1", delay = 0.2 }: { text: string; accent?: string; className?: string; as?: "h1" | "h2"; delay?: number }) {
@@ -60,40 +40,6 @@ export function SplitHeading({ text, accent, className = "", as: Tag = "h1", del
       </span>
     </Tag>
   );
-}
-
-/** Number that counts up when it scrolls into view. Keeps any prefix/suffix (₹, %, +). */
-export function CountUp({ value, className = "" }: { value: string; className?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  useGSAP(() => {
-    const el = ref.current!;
-    const m = value.match(/^([^\d]*)([\d.,]+)(.*)$/);
-    if (!m) return;
-    const [, pre, num, post] = m;
-    const target = parseFloat(num.replace(/,/g, ""));
-    const decimals = (num.split(".")[1] ?? "").length;
-    const fmt = (v: number) => `${pre}${v.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${post}`;
-    const mm = gsap.matchMedia();
-    mm.add(motionOk, () => {
-      const o = { v: 0 };
-      let started = false;
-      el.textContent = fmt(0);
-      const tween = gsap.to(o, {
-        v: target,
-        duration: 1.4,
-        ease: "power2.out",
-        paused: true,
-        onUpdate: () => { el.textContent = fmt(o.v); },
-        onComplete: () => { el.textContent = value; },
-      });
-      const go = () => { if (!started) { started = true; tween.play(); } };
-      const st = ScrollTrigger.create({ trigger: el, start: "top 95%", once: true, onEnter: go });
-      // Never leave a wrong number on screen: if the animation hasn't run (hidden tab, odd scroll), show the real value.
-      const safety = window.setTimeout(() => { if (!started || tween.progress() < 1) { tween.kill(); el.textContent = value; } }, 2500);
-      return () => { window.clearTimeout(safety); st.kill(); tween.kill(); el.textContent = value; };
-    });
-  });
-  return <span ref={ref} className={className}>{value}</span>;
 }
 
 /** Endless horizontal strip. */

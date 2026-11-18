@@ -5,6 +5,7 @@ import { liveProblems, suggestions } from "@/lib/matching";
 import { isNewProblem } from "@/lib/reason";
 import { Highlight } from "@/components/motion/Highlight";
 import { ProblemCard } from "@/components/ProblemBits";
+import { Reveal } from "@/components/motion/Reveal";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState, Notice, PageTitle } from "@/components/ui";
 
@@ -79,13 +80,13 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
       ) : (
         <>
         {tab === "suggested" && <p className="mb-3 font-display text-2xl font-extrabold"><Highlight>{t("problems.suggested")}</Highlight></p>}
-        <ul className="grid gap-3 md:grid-cols-2">
+        <Reveal as="ul" className="grid gap-3 md:grid-cols-2">
           {list.map((p, i) => (
-            <li key={p.id}>
+            <li key={p.id} data-reveal>
               <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={tab === "suggested" ? matches.get(p.id)?.reason ?? null : null} />
             </li>
           ))}
-        </ul>
+        </Reveal>
         </>
       )}
     </div>
