@@ -5,6 +5,7 @@ import type { T } from "@/lib/i18n/config";
 
 const FEATURE_LABEL: Record<string, string> = {
   cv: "CV reading + first question",
+  read_id: "Student ID reading",
   intake: "Student intake questions",
   pathways: "Career pathways",
   roadmap: "AI roadmaps",

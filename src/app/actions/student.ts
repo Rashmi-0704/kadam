@@ -1,72 +1,90 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { q, one, J } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { requireStudent } from "@/lib/guards";
 import { ROLES, slugify, roleTitle } from "@/db/taxonomy";
 import { saveUpload } from "@/lib/storage";
 import { notify } from "@/lib/notify";
-import { readCv, intakeNext, finishIntake, PathwaysSchema, INTAKE_FALLBACK_QUESTIONS, MAX_INTAKE_QUESTIONS, type ChatTurn, type ParsedCv } from "@/lib/ai/services";
+import { readCv, readStudentId, YEAR_OPTIONS, type StudentIdRead, intakeNext, finishIntake, PathwaysSchema, INTAKE_FALLBACK_QUESTIONS, MAX_INTAKE_QUESTIONS, type ChatTurn, type ParsedCv } from "@/lib/ai/services";
 import { tryLock, unlock, shortHash, setBusyFlag } from "@/lib/ai/guard";
 import { pdfText } from "@/lib/pdftext";
 import { fetchJobText } from "@/lib/jobs";
 import { takeUp } from "@/lib/engagement";
+import { safeNext } from "@/lib/safe-next";
 import { getT } from "@/lib/i18n/server";
 
 /** aiBusy: the chat reply came from the fixed question list because Gemini was rate-limited (the chat shows a friendly note). */
 export type FormState = { error?: string; ok?: boolean; n?: number; step?: string; email?: string; aiBusy?: boolean };
 
-/* ---------------- S1: details + verification ---------------- */
+/* ---------------- S1: student ID onboarding (round 4) ---------------- */
 
-export async function saveStudentDetails(_: FormState, form: FormData): Promise<FormState> {
-  const user = await requireUser("student");
-  const college = String(form.get("college") ?? "").trim();
-  const course = String(form.get("course") ?? "").trim();
-  const year = String(form.get("year") ?? "").trim();
-  const name = String(form.get("name") ?? "").trim();
-  if (college.length < 3 || course.length < 2 || !year || name.length < 2) return { error: "err.fill_required" };
-  await q(`update users set name = $2 where id = $1`, [user.id, name.slice(0, 80)]);
-  await q(
-    `insert into student_profiles (user_id, college, course, year) values ($1,$2,$3,$4)
-     on conflict (user_id) do update set college = excluded.college, course = excluded.course, year = excluded.year, updated_at = now()`,
-    [user.id, college.slice(0, 160), course.slice(0, 120), year.slice(0, 30)],
-  );
-  revalidatePath("/student", "layout");
-  return { ok: true };
-}
+const DETAILS_ERR = "Please check your college (3+ letters), course (2+ letters) and year.";
+const PROBLEM_PATH = /^\/student\/problems\/([0-9a-f-]{36})$/;
 
-const Email = z.string().trim().toLowerCase().email();
+export type IdReadState = { ok?: boolean; error?: string; college?: string; course?: string; year?: string; read?: boolean };
 
-/** College email: any properly formatted email is accepted and marks the student verified straight away. No email is sent (Kadam sends no auth emails). */
-export async function saveCollegeEmail(_: FormState, form: FormData): Promise<FormState> {
-  const user = await requireUser("student");
-  const e = Email.safeParse(form.get("college_email"));
-  if (!e.success) return { error: "err.email_invalid" };
-  await q(`update student_profiles set verification_method = 'email_otp', verification_status = 'verified', college_email = $2, updated_at = now() where user_id = $1`, [user.id, e.data]);
-  await q(`insert into verification_requests (student_id, method, status, reviewed_at) values ($1,'email_otp','verified',now())`, [user.id]);
-  revalidatePath("/student", "layout");
-  return { ok: true, step: "done" };
-}
-
-export async function uploadStudentId(_: FormState, form: FormData): Promise<FormState> {
+/**
+ * Upload of the student ID. Stores the file privately, marks the student verified straight away (decision: instant,
+ * admin can reject later), and reads college / course / year with one Gemini call. Any failure gives empty fields.
+ */
+export async function uploadAndReadId(form: FormData): Promise<IdReadState> {
   const user = await requireUser("student");
   const file = form.get("id_file");
-  if (!(file instanceof File) || file.size === 0) return { error: "verify.choose_file" };
-  if (!/^(image\/|application\/pdf)/.test(file.type)) return { error: "verify.file_type" };
+  if (!(file instanceof File) || file.size === 0) return { error: "Please choose a photo or PDF of your ID." };
+  if (!/^(image\/|application\/pdf)/.test(file.type)) return { error: "Please upload a photo or a PDF." };
   let stored;
   try {
     stored = await saveUpload("student-ids", `ids/${user.id}`, file);
   } catch (e) {
-    return { error: (e as Error).message === "file_too_large" ? "err.file_too_large" : "common.something_wrong" };
+    return { error: (e as Error).message === "file_too_large" ? "That file is over 4 MB. Try a smaller photo." : "Something went wrong. Please try again." };
   }
-  await q(`update student_profiles set verification_method = 'id_upload', verification_status = 'pending', updated_at = now() where user_id = $1`, [user.id]);
-  await q(`insert into verification_requests (student_id, method, id_file, status) values ($1,'id_upload',$2::jsonb,'pending')`, [user.id, J(stored)]);
+  await q(`insert into student_profiles (user_id, verification_status) values ($1,'not_started') on conflict (user_id) do nothing`, [user.id]);
+  await q(`update student_profiles set verification_method = 'id_upload', verification_status = 'verified', updated_at = now() where user_id = $1`, [user.id]);
+  await q(`insert into verification_requests (student_id, method, id_file, status) values ($1,'id_upload',$2::jsonb,'verified')`, [user.id, J(stored)]);
   const admins = await q(`select id from users where role = 'admin'`);
   for (const a of admins) await notify(a.id, "verification_requested", { student: user.name });
   revalidatePath("/student", "layout");
-  return { ok: true };
+
+  // One reading per upload, at most 3 per student per day; a double tap runs it once.
+  let read: StudentIdRead | null = null;
+  const countKey = `read_id:${user.id}:${new Date().toISOString().slice(0, 10)}`;
+  const used = Number((await one(`select value from ai_cache where key = $1`, [countKey]))?.value ?? 0);
+  if (used < 3 && (await tryLock(`read_id:${user.id}`, 40))) {
+    await q(`insert into ai_cache (key, value) values ($1,$2::jsonb) on conflict (key) do update set value = excluded.value`, [countKey, J(used + 1)]);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    read = await readStudentId({ bytes, mime: file.type }).catch(() => null).finally(() => unlock(`read_id:${user.id}`));
+  }
+  if (!read || !read.looks_like_student_id || !(read.college || read.course)) return { ok: true, read: false, college: "", course: "", year: "" };
+  return { ok: true, read: true, college: read.college, course: read.course, year: read.year };
+}
+
+/** Continue: saves college, course and year (same rules as before), then finishes the take-up the student asked for, or goes to the profile. */
+export async function finishOnboarding(_: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser("student");
+  const college = String(form.get("college") ?? "").trim();
+  const course = String(form.get("course") ?? "").trim();
+  const year = String(form.get("year") ?? "").trim();
+  if (college.length < 3 || course.length < 2 || !(YEAR_OPTIONS as readonly string[]).includes(year)) return { error: DETAILS_ERR };
+  const sp = await one(`select verification_status from student_profiles where user_id = $1`, [user.id]);
+  if (!["verified", "pending"].includes(sp?.verification_status)) return { error: "Add your student ID first." };
+  await q(
+    `insert into student_profiles (user_id, college, course, year) values ($1,$2,$3,$4)
+     on conflict (user_id) do update set college = excluded.college, course = excluded.course, year = excluded.year, updated_at = now()`,
+    [user.id, college.slice(0, 160), course.slice(0, 120), year],
+  );
+  revalidatePath("/student", "layout");
+  const next = safeNext(form.get("next"));
+  const problemId = form.get("intent") === "takeup" ? next?.match(PROBLEM_PATH)?.[1] : undefined;
+  if (problemId) {
+    const already = await one(`select id from engagements where problem_id = $1 and student_id = $2 and status <> 'withdrawn'`, [problemId, user.id]);
+    if (already) redirect(`/student/problems/${problemId}?notice=already`);
+    const r = await takeUp(user.id, problemId);
+    if (!r.ok) redirect(`/student/problems/${problemId}?notice=closed`);
+    redirect(`/student/engagements/${r.id}?new=1`);
+  }
+  redirect(next ?? "/student/profile");
 }
 
 /* ---------------- S2: profile builder ---------------- */
@@ -212,8 +230,13 @@ export async function editPathways() {
 /* ---------------- S4: take up ---------------- */
 
 export async function takeUpProblem(_: FormState, form: FormData): Promise<FormState> {
-  const { user } = await requireStudent();
-  const r = await takeUp(user.id, String(form.get("problemId")));
+  const { user, profile } = await requireStudent();
+  const problemId = String(form.get("problemId"));
+  // Never a dead end: without a verified (or pending) ID the student adds it first, and Continue finishes this take-up.
+  if (!["verified", "pending"].includes(profile.verification_status) && /^[0-9a-f-]{36}$/.test(problemId)) {
+    redirect(`/student/onboarding?next=/student/problems/${problemId}&intent=takeup`);
+  }
+  const r = await takeUp(user.id, problemId);
   if (!r.ok) return { error: r.error };
   redirect(`/student/engagements/${r.id}?new=1`);
 }

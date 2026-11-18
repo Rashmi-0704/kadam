@@ -9,7 +9,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { AiUsage } from "../AiUsage";
 import { SignInHelp } from "../SignInHelp";
 
-export const metadata = { title: "ID checks" };
+export const metadata = { title: "IDs to check" };
 
 function hoursLeftOf(submitted: unknown) {
   return Math.max(0, 72 - Math.floor((Date.now() - new Date(String(submitted)).getTime()) / 36e5));
@@ -21,19 +21,19 @@ export default async function AdminVerifications({ searchParams }: { searchParam
   const t = await getT();
   const lang = await getLang();
   const pending = await q(
-    `select v.id, v.id_file, v.submitted_at, u.name, u.email, sp.college, sp.course, sp.year
+    `select v.id, v.id_file, v.submitted_at, v.status, u.name, u.email, sp.college, sp.course, sp.year
        from verification_requests v join users u on u.id = v.student_id left join student_profiles sp on sp.user_id = v.student_id
-      where v.status = 'pending' and v.method = 'id_upload' order by v.submitted_at asc`,
+      where v.method = 'id_upload' and v.reviewed_at is null and v.status in ('pending','verified') order by v.submitted_at asc`,
   );
   const withUrls = await Promise.all(pending.map(async (p): Promise<Row> => ({ ...p, url: p.id_file ? await fileUrl(p.id_file as StoredFile, "admin") : null })));
   const recent = await q(
     `select v.id, v.status, v.reviewed_at, u.name from verification_requests v join users u on u.id = v.student_id
-      where v.method = 'id_upload' and v.status <> 'pending' order by v.reviewed_at desc nulls last limit 10`,
+      where v.method = 'id_upload' and v.reviewed_at is not null order by v.reviewed_at desc limit 10`,
   );
   return (
     <AppShell user={user}>
-      <PageTitle eyebrow={t("admin.eyebrow")} title={t("admin.title")} sub={t("admin.sub")} />
-      <Section title={t("admin.waiting", { n: pending.length })}>
+      <PageTitle eyebrow={t("admin.eyebrow")} title="IDs to check" sub="Students are verified the moment they upload an ID, so they can take up problems straight away. Check each ID here; reject one only if it isn't a real student ID, and say why." />
+      <Section title={`Waiting for a check (${pending.length})`}>
         {withUrls.length === 0 ? (
           <EmptyState title={t("admin.empty")} />
         ) : (
@@ -55,14 +55,14 @@ export default async function AdminVerifications({ searchParams }: { searchParam
                         <p className="text-sm text-ink-2">{[p.course, p.year, p.college].filter(Boolean).join(" · ")}</p>
                         <p className="text-xs text-ink-3">{p.email}</p>
                       </div>
-                      <span className={`chip shrink-0 ${hoursLeft < 12 ? "border-alert/30 bg-alert-soft text-alert" : ""}`}>{t("admin.hours_left", { n: hoursLeft })}</span>
+                      {p.status === "verified" ? <span className="chip shrink-0 border-success/30 bg-success-soft text-success-ink">Auto-verified</span> : <span className={`chip shrink-0 ${hoursLeft < 12 ? "border-alert/30 bg-alert-soft text-alert" : ""}`}>{t("admin.hours_left", { n: hoursLeft })}</span>}
                     </div>
                     <p className="text-xs text-ink-3">{t("admin.submitted", { ago: timeAgo(p.submitted_at, t) })}</p>
                     <form action={reviewVerification} className="space-y-2">
                       <input type="hidden" name="id" value={p.id} />
-                      <input name="note" className="input min-h-11 py-2 text-sm" placeholder={t("admin.note_ph")} aria-label={t("admin.note_ph")} />
+                      <input name="note" className="input min-h-11 py-2 text-sm" placeholder="Reason, if you reject (the student sees it)" aria-label="Reason, if you reject" />
                       <div className="flex gap-2">
-                        <SubmitButton className="btn-primary flex-1" name="decision" value="verified">{t("admin.approve")}</SubmitButton>
+                        <SubmitButton className="btn-primary flex-1" name="decision" value="verified">{p.status === "verified" ? "Looks fine" : t("admin.approve")}</SubmitButton>
                         <SubmitButton className="btn-danger flex-1" name="decision" value="rejected">{t("admin.reject")}</SubmitButton>
                       </div>
                     </form>

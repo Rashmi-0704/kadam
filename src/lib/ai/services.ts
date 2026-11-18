@@ -5,6 +5,8 @@ import { ROLES, roleTitle, slugify, SECTORS, PROBLEM_TYPES, DIFFICULTIES, TIME_N
 import type { Section, Topic, Resource, RoadmapIntro } from "@/db/roadmaps-data";
 import { pickTitle, heuristicCategories } from "./heuristics";
 import { catalogItem } from "@/db/roadmap-catalog";
+import { normaliseYear } from "@/lib/year";
+export { YEAR_OPTIONS } from "@/lib/year";
 
 const LANG_NAME: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada", ta: "Tamil", or: "Odia", bn: "Bengali", gu: "Gujarati" };
 const STYLE = "Use short, plain sentences. Never call Kadam an internship platform or job board. Never describe business owners as uneducated.";
@@ -102,6 +104,45 @@ export async function readCv(input: { bytes?: Uint8Array; mime?: string; text?: 
 
 export async function parseCv(input: { bytes?: Uint8Array; mime?: string; text?: string }): Promise<ParsedCv> {
   return (await readCv(input)).cv;
+}
+
+/* ============================== AI-1c  Student ID reader ============================== */
+const StudentIdSchema = z.object({
+  college: z.string().default(""),
+  course: z.string().default(""),
+  year: z.string().default(""),
+  looks_like_student_id: z.boolean().default(false),
+});
+export type StudentIdRead = { college: string; course: string; year: string; looks_like_student_id: boolean };
+
+/**
+ * Round 4: reads college, course and year from a student ID photo or PDF, the same way readCv sends files.
+ * Never asks for (or returns) the name, ID number, date of birth, address or photo. Returns null on any failure,
+ * rate limit or unreadable file; the caller then shows empty fields to fill in.
+ */
+export async function readStudentId(input: { bytes: Uint8Array; mime: string }): Promise<StudentIdRead | null> {
+  if (!geminiCanRead(input.mime)) return null;
+  const { data } = await geminiCall({
+    feature: "read_id",
+    system:
+      `You read Indian college student ID cards for Kadam. Return only: college (full institution name with city if printed), ` +
+      `course (degree and subject as printed, e.g. "B.Com", "BA English", "B.Tech CSE"), year (study year as printed, e.g. "2nd year", "III Sem", "2023-27"), ` +
+      `and looks_like_student_id (true only if this is a student identity card or college document). ` +
+      `Ignore and never output the person's name, ID or roll number, date of birth, address, phone, blood group or anything about the photo. ` +
+      `Use an empty string for anything you can't read clearly.`,
+    parts: [{ inline_data: { mime_type: input.mime, data: toBase64(input.bytes) } }, { text: "Read this card." }],
+    zod: StudentIdSchema,
+    jsonSchema: obj({ college: str, course: str, year: str, looks_like_student_id: { type: "boolean" } }),
+    temperature: 0,
+    maxOutputTokens: 1024,
+  });
+  if (!data) return null;
+  return {
+    college: data.college.trim().slice(0, 160),
+    course: data.course.trim().slice(0, 120),
+    year: normaliseYear(data.year),
+    looks_like_student_id: data.looks_like_student_id,
+  };
 }
 
 /* ============================== AI-1b  Intake chat ============================== */

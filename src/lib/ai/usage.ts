@@ -4,7 +4,7 @@ import { env } from "../env";
 import { TAKE_SLOT_SQL, MARK_OUTCOME_SQL, CLEAN_MINUTES_SQL, USAGE_DAYS_SQL, TODAY_SQL } from "./usage-sql";
 
 /** Features that call Gemini; the name is what the admin page shows. */
-export type AiFeature = "cv" | "intake" | "pathways" | "roadmap" | "gaps" | "match" | "pintake" | "draft" | "report";
+export type AiFeature = "cv" | "read_id" | "intake" | "pathways" | "roadmap" | "gaps" | "match" | "pintake" | "draft" | "report";
 
 const WAIT_STEP_MS = 2500;
 const MAX_WAIT_MS = 12000;
