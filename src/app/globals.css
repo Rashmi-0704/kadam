@@ -261,3 +261,23 @@ h1, h2, h3, .font-display {
 /* Dashboard progress ring: grows once (see ProgressRing). */
 .ring-arc { transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .ring-arc { transition: none; } }
+
+/* Round 4: "Try it" role chips fade in one after another. */
+.ip-in { display: inline-flex; animation: ip-in 0.35s ease-out both; }
+@keyframes ip-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Round 4: take-up panel highlighted after "Take up" on a card (two soft pulses). */
+.takeup-ring { position: relative; }
+.takeup-ring::after { content: ""; position: absolute; inset: -6px; border-radius: 1.25rem; box-shadow: 0 0 0 4px rgb(99 102 241 / 0.45); pointer-events: none; animation: takeup-pulse 0.9s ease-in-out 2 both; }
+@keyframes takeup-pulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.015); } }
+
+/* Round 4: problem search widens on focus (flex sizing, no layout jump). */
+.fb-search { flex: 0 0 220px; transition: flex-basis 300ms ease-out; }
+.fb-row:focus-within .fb-search, .fb-search[data-filled="1"] { flex-basis: 300px; }
+@media (min-width: 1280px) { .fb-row:focus-within .fb-search, .fb-search[data-filled="1"] { flex-basis: 380px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ip-in { animation: none; }
+  .takeup-ring::after { animation: none; opacity: 1; }
+  .fb-search { transition: none; }
+}

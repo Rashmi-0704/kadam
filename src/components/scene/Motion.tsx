@@ -13,7 +13,7 @@ export { CountUp } from "@/components/motion/CountUp";
 const motionOk = "(prefers-reduced-motion: no-preference)";
 
 /** Headline that rises in word by word. */
-export function SplitHeading({ text, accent, className = "", as: Tag = "h1", delay = 0.2 }: { text: string; accent?: string; className?: string; as?: "h1" | "h2"; delay?: number }) {
+export function SplitHeading({ text, accent, className = "", as: Tag = "h1", delay = 0.2, breakAccent = false }: { text: string; accent?: string; className?: string; as?: "h1" | "h2"; delay?: number; breakAccent?: boolean }) {
   const ref = useRef<HTMLHeadingElement>(null);
   useGSAP(
     () => {
@@ -36,6 +36,7 @@ export function SplitHeading({ text, accent, className = "", as: Tag = "h1", del
     <Tag ref={ref} className={className} aria-label={accent ? `${text} ${accent}` : text}>
       <span aria-hidden="true">
         {words(text)}
+        {accent && breakAccent && <br />}
         {accent && words(accent, "text-primary")}
       </span>
     </Tag>

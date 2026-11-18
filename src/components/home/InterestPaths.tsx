@@ -21,18 +21,19 @@ const INTERESTS: { id: string; label: string; emoji: string; roles: Record<Tier,
   { id: "impact", label: "Helping my community", emoji: "🤝", roles: { now: ["NGO Programme Coordinator"], pivot: ["Research Analyst", "Operations Associate"], stretch: ["Product Manager"] } },
 ];
 
-const TIERS: { id: Tier; label: string; sub: string; chip: string }[] = [
-  { id: "now", label: "Now", sub: "You could start here today", chip: "bg-success-soft text-success-ink" },
-  { id: "pivot", label: "Pivot", sub: "A short step away", chip: "bg-info-soft text-info" },
-  { id: "stretch", label: "Stretch", sub: "Something to grow towards", chip: "bg-highlight-soft text-highlight-deep" },
+const TIERS: { id: Tier; label: string; chip: string }[] = [
+  { id: "now", label: "Now", chip: "bg-success-soft text-success-ink" },
+  { id: "pivot", label: "Pivot", chip: "bg-info-soft text-info" },
+  { id: "stretch", label: "Stretch", chip: "bg-highlight-soft text-highlight-deep" },
 ];
 
 function rank(picked: string[], tier: Tier, exclude: Set<string>): string[] {
   const score = new Map<string, number>();
-  for (const id of picked) {
+  // The latest pick weighs a little more, so every tap visibly changes the result.
+  picked.forEach((id, order) => {
     const it = INTERESTS.find((x) => x.id === id);
-    it?.roles[tier].forEach((r, i) => score.set(r, (score.get(r) ?? 0) + 2 - i * 0.5));
-  }
+    it?.roles[tier].forEach((r, i) => score.set(r, (score.get(r) ?? 0) + 2 - i * 0.5 + order * 0.3));
+  });
   return [...score.entries()].filter(([r]) => !exclude.has(r)).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([r]) => r);
 }
 
@@ -49,9 +50,7 @@ export function InterestPaths() {
     <Reveal as="section" className="mx-auto max-w-6xl px-4 py-20" aria-labelledby="ip-title">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
         <div>
-          <p className="eyebrow">Try it</p>
-          <h2 id="ip-title" className="mt-2 text-[32px] leading-tight font-bold sm:text-[40px]">Pick what you enjoy. See your paths.</h2>
-          <p className="mt-3 text-lg text-ink-2">Tap a few things you like doing. This is a quick preview: inside Kadam, your real paths come from your CV and a two-minute chat.</p>
+          <h2 id="ip-title" className="text-[32px] leading-tight font-bold sm:text-[40px]">What do you enjoy?</h2>
           <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Things you enjoy">
             {INTERESTS.map((it) => {
               const on = picked.includes(it.id);
@@ -65,21 +64,17 @@ export function InterestPaths() {
           </div>
         </div>
         <div className="space-y-3" aria-live="polite">
-          {picked.length === 0 ? (
-            <p className="card p-6 text-ink-2">Pick at least one thing you enjoy to see example roles.</p>
-          ) : (
-            result.map((t, i) => (
-              <div key={t.id} className="glow-card card p-5" style={{ "--glow-delay": `${-i * 4}s` } as React.CSSProperties}>
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${t.chip}`}>{t.label}</span>
-                  <span className="text-sm text-ink-3">{t.sub}</span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {t.roles.length ? t.roles.map((r, j) => (j === 0 && i === 0 ? <HighlightPill key={r}>{r}</HighlightPill> : <span key={r} className="chip px-3 py-1 text-sm font-bold text-ink">{r}</span>)) : <span className="text-sm text-ink-3">Pick another interest to see more.</span>}
-                </div>
-              </div>
-            ))
-          )}
+          {result.map((t, i) => (
+            <div key={t.id} className="glow-card card flex min-h-[4.5rem] flex-wrap items-center gap-2 p-4" style={{ "--glow-delay": `${-i * 4}s` } as React.CSSProperties}>
+              <span className={`mr-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold ${t.chip}`}>{t.label}</span>
+              {t.roles.map((r, j) => (
+                <span key={`${r}-${picked.join()}`} className="ip-in" style={{ animationDelay: `${(i * 2 + j) * 70}ms` }}>
+                  {j === 0 && i === 0 ? <HighlightPill>{r}</HighlightPill> : <span className="chip px-3 py-1 text-sm font-bold text-ink">{r}</span>}
+                </span>
+              ))}
+              {!t.roles.length && <span className="text-sm text-ink-3" aria-hidden="true">—</span>}
+            </div>
+          ))}
           <Link href="/auth?as=student" className="btn-primary w-full sm:w-auto">Find my real paths →</Link>
         </div>
       </div>

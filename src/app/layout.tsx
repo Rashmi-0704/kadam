@@ -9,6 +9,7 @@ const nunito = Nunito({ subsets: ["latin"], weight: ["700", "800", "900"], varia
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://kadam-virid.vercel.app"),
   title: { default: "Kadam. Take your first step.", template: "%s · Kadam" },
   description: "Kadam. Take your first step. College students solve real problems for small businesses and NGOs, and turn the results into proof of what they can do.",
   openGraph: { title: "Kadam. Take your first step.", description: "College students solve real problems for small businesses and NGOs, and turn the results into proof of what they can do.", siteName: "Kadam" },

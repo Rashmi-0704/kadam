@@ -123,7 +123,7 @@ export default async function BusinessesHome() {
       <footer className="border-t-2 border-line bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm text-ink-2">
           <LockUp tagline={t("landing.tagline")} />
-          <Link href="/" className="font-semibold underline underline-offset-4 hover:text-primary-deep">{t("bl.not_business")}</Link>
+          <Link href="/students" className="font-semibold underline underline-offset-4 hover:text-primary-deep">{t("bl.not_business")}</Link>
         </div>
       </footer>
     </div>

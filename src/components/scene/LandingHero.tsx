@@ -18,6 +18,8 @@ export function LandingHero({
   h1,
   accent,
   sub,
+  h1Class,
+  breakAccent = false,
   cta,
   ctaHref,
   secondary,
@@ -36,7 +38,12 @@ export function LandingHero({
   eyebrow: string;
   h1: string;
   accent: string;
-  sub: string;
+  /** Optional paragraph under the headline; without it the hero closes up with no gap. */
+  sub?: string;
+  /** Size classes for a long headline (defaults to the big two-word style). */
+  h1Class?: string;
+  /** Put the indigo accent on its own line. */
+  breakAccent?: boolean;
   cta: string;
   ctaHref: string;
   secondary: string;
@@ -87,8 +94,8 @@ export function LandingHero({
           <div className="mx-auto grid min-h-[calc(88dvh-4rem)] max-w-6xl grid-cols-1 items-start gap-10 px-4 pt-6 pb-[48vh] md:grid-cols-[1.1fr_1fr] md:items-center md:pb-16">
             <div>
               <p data-trail-block="" className="h-fade eyebrow w-fit">{eyebrow}</p>
-              <div data-trail-block=""><SplitHeading text={h1} accent={accent} className="mt-3 text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]" /></div>
-              <p data-trail-block="" className="h-fade mt-5 max-w-xl text-lg text-ink-2">{sub}</p>
+              <div data-trail-block=""><SplitHeading text={h1} accent={accent} breakAccent={breakAccent} className={`mt-3 ${h1Class ?? "text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]"}`} /></div>
+              {sub && <p data-trail-block="" className="h-fade mt-5 max-w-xl text-lg text-ink-2">{sub}</p>}
               <div className="h-fade mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link data-trail-block="" href={ctaHref} className="btn-primary px-8 text-base">{cta} <span aria-hidden="true">→</span></Link>
                 <a data-trail-block="" href={secondaryHref} className="btn-secondary px-7">{secondary}</a>

@@ -1,30 +1,19 @@
-import { getT } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { currentUser, homeFor } from "@/lib/session";
-import { Welcome } from "./Welcome";
+import { AUDIENCE_COOKIE } from "@/lib/i18n/server";
+import { StudentsLanding } from "@/components/home/StudentsLanding";
 
-// First screen: two big cards — student or business — and nothing else competing with them.
-export default async function WelcomePage() {
-  const t = await getT();
+export const metadata = {
+  description: "Kadam. Take your first step. Solve real problems for small businesses and NGOs, and turn the results into an impact report for your resume.",
+  alternates: { canonical: "/" },
+};
+
+// The home page is the student landing page (also served at /students).
+// Signed-in users go straight to their dashboard; visitors who chose "business" before go to /businesses.
+export default async function Home() {
   const u = await currentUser();
-  return (
-    <Welcome
-      home={u?.role ? homeFor(u.role) : null}
-      words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]}
-      text={{
-        tagline: t("landing.tagline"),
-        home: t("nav.home"),
-        who: t("auth.who_title"),
-        whoSub: t("welcome.who_sub"),
-        studentTitle: t("welcome.student"),
-        studentSub: t("welcome.student_sub"),
-        studentGo: t("welcome.go_student"),
-        businessTitle: t("welcome.business"),
-        businessSub: t("welcome.business_sub"),
-        businessGo: t("welcome.go_business"),
-        login: t("landing.login"),
-        open: t("welcome.continue"),
-        note: t("landing.not_portal"),
-      }}
-    />
-  );
+  if (u?.role) redirect(homeFor(u.role));
+  if ((await cookies()).get(AUDIENCE_COOKIE)?.value === "business") redirect("/businesses");
+  return <StudentsLanding />;
 }
