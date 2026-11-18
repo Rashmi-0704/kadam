@@ -44,6 +44,9 @@ export default async function ProfilePage() {
         <h1 className="mt-5 text-2xl font-bold sm:text-3xl">{t("profile.cv_title")}</h1>
         <p className="mt-1 mb-6 text-ink-2">{t("profile.cv_sub")}</p>
         <CvUpload />
+        <div className="mt-6 flex items-center gap-3 text-sm text-ink-3" aria-hidden="true"><span className="h-px flex-1 bg-line" />or<span className="h-px flex-1 bg-line" /></div>
+        <Link href="/student/problems?tab=all" className="btn-secondary mt-6 w-full">Start exploring problems →</Link>
+        <p className="mt-2 text-center text-sm text-ink-3">You can take up a problem now and add your CV any time.</p>
         {idCard}
       </div>
     );

@@ -61,8 +61,12 @@ async function cvTextFrom(file: File, bytes: Uint8Array) {
 
 export async function uploadCv(_: FormState, form: FormData): Promise<FormState> {
   const { user } = await requireStudent();
-  const file = form.get("cv");
-  const pasted = String(form.get("cv_text") ?? "").trim();
+  return saveCv(user.id, form.get("cv"), String(form.get("cv_text") ?? "").trim());
+}
+
+/** Stores a CV (file or pasted text), reads it with one Gemini call and starts the intake chat. Shared by the profile and the take-up page. */
+async function saveCv(userId: string, file: FormDataEntryValue | null, pasted: string): Promise<FormState> {
+  const user = { id: userId };
   let cvFile = null;
   let text = pasted;
   let bytes: Uint8Array | undefined;
@@ -193,9 +197,43 @@ export async function editPathways() {
 
 /* ---------------- S4: take up ---------------- */
 
+/** A student without a CV or with college, course or year missing sees one short details page before taking up (never a lock). */
+async function needsDetails(profile: { cv_parsed?: unknown; college?: string | null; course?: string | null; year?: string | null }) {
+  return !profile.cv_parsed || !profile.college?.trim() || !profile.course?.trim() || !profile.year?.trim();
+}
+
 export async function takeUpProblem(_: FormState, form: FormData): Promise<FormState> {
+  const { user, profile } = await requireStudent();
+  const problemId = String(form.get("problemId"));
+  if (/^[0-9a-f-]{36}$/.test(problemId) && (await needsDetails(profile))) redirect(`/student/problems/${problemId}/start`);
+  const r = await takeUp(user.id, problemId);
+  if (!r.ok) return { error: r.error };
+  redirect(`/student/engagements/${r.id}?new=1`);
+}
+
+/**
+ * The "Before you start" page: saves whatever details were filled in (a CV is read only if one was added),
+ * then takes the problem up and opens the engagement. Nothing here is required.
+ */
+export async function takeUpWithDetails(_: FormState, form: FormData): Promise<FormState> {
   const { user } = await requireStudent();
-  const r = await takeUp(user.id, String(form.get("problemId")));
+  const problemId = String(form.get("problemId") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(problemId)) return { error: "common.something_wrong" };
+  const clean = (k: string, n: number) => String(form.get(k) ?? "").trim().slice(0, n);
+  const year = clean("year", 30);
+  await q(
+    `update student_profiles set college = coalesce(nullif($2,''), college), course = coalesce(nullif($3,''), course),
+       year = coalesce(nullif($4,''), year), updated_at = now() where user_id = $1`,
+    [user.id, clean("college", 160), clean("course", 120), (YEAR_OPTIONS as readonly string[]).includes(year) ? year : ""],
+  );
+  const file = form.get("cv");
+  const pasted = String(form.get("cv_text") ?? "").trim();
+  if ((file instanceof File && file.size > 0) || pasted) {
+    const r = await saveCv(user.id, file, pasted);
+    if (r.error) return r;
+  }
+  revalidatePath("/student", "layout");
+  const r = await takeUp(user.id, problemId);
   if (!r.ok) return { error: r.error };
   redirect(`/student/engagements/${r.id}?new=1`);
 }
