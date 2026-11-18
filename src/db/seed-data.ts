@@ -69,13 +69,12 @@ export async function seed(q: Q, put: Put) {
   }
 
   // ---------- students ----------
-  // Ananya: verified, no profile yet (used for the live profile-builder demo).
+  // Ananya: no CV and no student ID yet (round 5: the ID is never a gate), used for the live profile-builder demo.
   await q(
-    `insert into student_profiles (user_id, college, course, year, verification_method, verification_status, college_email)
-     values ($1,'Odisha University of Technology and Research, Bhubaneswar','B.Tech, Computer Science','3rd year','id_upload','verified',null)`,
+    `insert into student_profiles (user_id, college, course, year, verification_status)
+     values ($1,'Odisha University of Technology and Research, Bhubaneswar','B.Tech, Computer Science','3rd year','not_started')`,
     [IDS.ananya],
   );
-  await q(`insert into verification_requests (student_id, method, status, submitted_at, reviewed_by, reviewed_at) values ($1,'id_upload','verified',$2,$3,$2)`, [IDS.ananya, ago(20), IDS.admin]);
 
   const rohanCv = {
     name: "Rohan Mehta",
