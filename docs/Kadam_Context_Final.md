@@ -80,11 +80,12 @@ flowchart TD
 
 ### 5.3 Student side
 
-**S1. Onboarding and verification (updated in round 4)**
-- **ID only, one screen.** Sign-up already has the name, so onboarding asks for just one thing: a photo or PDF of the student ID. The upload starts on its own, Gemini reads the **college, course and year** from it (`readStudentId`, one call), and the student checks them in three editable fields and presses **Continue**. If the card can't be read, the same fields appear empty to fill in.
-- **Instant verification.** The upload marks the student verified at once, so taking up a problem is never blocked by a wait. The ID stays in private storage; only the admin can open it. The admin queue ("IDs to check") still lists every new upload, and the admin can **reject** one with a reason; the student then sees the reason and adds a new ID before taking up again.
-- **Take up is never locked.** The button always reads "Take up this problem". A student without a verified ID is taken to the ID screen with a line naming the problem, and **Continue finishes that take-up** and opens the new engagement (chat with the business). Students whose older uploads are still "pending" can also take up.
-- The college-email route was removed. The CV stays optional and never blocks taking up.
+**S1. Sign-up and the student ID (updated in round 5)**
+- **Sign-up is one page.** After "Who are you?", a student fills in full name, email, password, a **Student ID** upload area and the consent box, then presses **Create account** and lands on their profile (CV and paths). Businesses get the same page without the ID area and land on their business details.
+- **The student ID is optional in practice, never a gate.** Nothing on the page marks it as required or optional; it is simply a field. With an ID, Kadam stores it privately, lists it in the admin's "IDs to check", marks the student verified (businesses see a small "ID checked" tick) and reads the college, course and year from it with one Gemini call, saved straight to the profile with no confirmation step. A failed reading saves nothing and shows nothing. Without an ID, nothing is shown to anyone about it.
+- **The profile's "Student ID" card** shows the upload area (or "ID added ✓") plus editable College, Course and Year. If the admin rejects an ID, the reason shows there with the upload area again; the student is not blocked from anything.
+- **Take up always works** for every student, from a problem card or the problem page. The round-4 onboarding screen and ID gate were removed; `/student/onboarding` now redirects to the profile.
+- College, course and year can be empty; every screen leaves out what is missing.
 
 **S2. AI career pathway profile [AI-1]**
 - The student uploads a CV, and the AI reads it.
@@ -231,11 +232,11 @@ flowchart LR
 | Shared | `/` | The student landing page (same page as `/students`); a business-cookie visitor goes to `/businesses`, a signed-in user to their dashboard |
 | Shared | `/auth` | Log in, sign up, OTP, role selection, consent |
 | Shared | `/settings` | Language, profile, consent |
-| Student | `/student/onboarding` | One card: upload the student ID → read college, course and year → Continue (finishes a pending take-up when `?intent=takeup`) |
-| Student | `/student/profile` | CV upload → AI intake chat → Now/Pivot/Stretch pathways → edit and approve |
+| Student | `/student/onboarding` | Redirects to `/student/profile` (round 5; sign-up is one page and the ID card lives on the profile) |
+| Student | `/student/profile` | CV upload → AI intake chat → Now/Pivot/Stretch pathways → edit and approve; a "Student ID" card with College, Course and Year |
 | Student | `/student/roadmaps`, `/student/roadmaps/:role` | Roadmap list, plus a roadmap.sh-style step view with progress |
 | Student | `/student/problems` | Browse, filter, the "Suggested for you" tab, taker counts |
-| Student | `/student/problems/:id` | Problem detail, skills to brush up, **Take up** (never locked; sends an unverified student to the ID screen first) |
+| Student | `/student/problems/:id` | Problem detail, skills to brush up, **Take up** (always works) |
 | Student | `/student/engagements/:id` | Chat with files, submit solution, current status, withdraw |
 | Student | `/student/dashboard` | All engagements, statuses, rejection reasons, reports, roadmap progress |
 | Student | `/reports/:shareToken` | Impact report: public share view and PDF |
@@ -292,8 +293,8 @@ flowchart LR
 ### 6.5 Status lifecycles
 
 ```
-Verification:  not_started → verified (ID upload, instant) → rejected (admin, with a reason) → verified (new upload)
-               older uploads: pending → verified | rejected (pending may take up problems)
+Verification:  not_started (no ID; nothing shown) → verified (ID uploaded at sign-up or on the profile) → rejected (admin, with a reason) → verified (new upload)
+               None of these states blocks anything (round 5).
 
 Problem:       draft → live → closed (to new takers)
 
@@ -350,8 +351,8 @@ Engagement:    taken_up → in_progress → submitted → received
 | Focus | Student-first. The business side is a bonus. |
 | Business users | MSMEs, SMEs, startups, NGOs and informal businesses. No ID needed to join. |
 | Solutions | Can be non-software. |
-| Student verification | Student ID upload only, verified instantly; the admin checks IDs afterwards and can reject with a reason (round 4). |
-| Unverified students | Never see a locked button: Take up sends them to add their ID, and Continue finishes the take-up (round 4). |
+| Student verification | A student ID field on the one-page sign-up (and on the profile), optional in practice and never mentioned as such. Verified instantly; the admin can reject with a reason (round 5). |
+| Students without an ID | Can do everything, including Take up. Businesses simply don't see the "ID checked" tick (round 5). |
 | Landing page | One page at `/` (also `/students`); businesses have `/businesses` (round 4). |
 | Login | One login, then choose a role. Email OTP only for the MVP. |
 | Tech stack | Free stack: Next.js + Tailwind, Supabase, Vercel, Gemini free tier, Sarvam STT, designed in Claude Design, polished with Impeccable. |
