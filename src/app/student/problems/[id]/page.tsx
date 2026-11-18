@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { requireStudent } from "@/lib/guards";
 import { one } from "@/lib/db";
 import { getT, getLang } from "@/lib/i18n/server";
-import { BackLink, Section, fmtDate } from "@/components/ui";
+import { BackLink, Notice, Section, fmtDate } from "@/components/ui";
+import { ScrollToTakeUp } from "./ScrollToTakeUp";
 import { CategoryChips, ProblemStatement, TakerCount, NewBadge, FitReason } from "@/components/ProblemBits";
 import { gapsFor, liveProblems, suggestions } from "@/lib/matching";
 import { TakeUpButton } from "./TakeUpButton";
@@ -17,8 +18,9 @@ export const maxDuration = 60;
 
 export const metadata = { title: "Problem" };
 
-export default async function StudentProblem({ params }: { params: Promise<{ id: string }> }) {
+export default async function StudentProblem({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ takeup?: string; notice?: string }> }) {
   const { id } = await params;
+  const sp = await searchParams;
   const { user, profile } = await requireStudent();
   const p = await one(
     `select p.*, b.business_name, b.city as business_city, b.type as business_type,
@@ -36,10 +38,11 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
     const m = (await suggestions(user.id, profile, await liveProblems())).get(id);
     if (m) fit = m.reason;
   }
-  const verified = profile.verification_status === "verified";
+  const canTake = ["verified", "pending"].includes(profile.verification_status);
   const active = mine && mine.status !== "withdrawn";
+  const ring = sp.takeup === "1" && !active && p.status === "live";
   const action = (
-    <div className="card space-y-3 p-5">
+    <div data-takeup="" className={`card scroll-mt-28 space-y-3 p-5 ${ring ? "takeup-ring" : ""}`}>
             {active ? (
               <>
                 <p className="font-bold">{t("problem.you_are_on")}</p>
@@ -47,15 +50,14 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
               </>
             ) : p.status === "closed" ? (
               <p className="font-semibold text-ink-2">{t("problem.closed")}</p>
-            ) : verified ? (
-              <>
-                <p className="text-sm text-ink-2">{t("problem.take_help", { business: p.business_name })}</p>
-                <TakeUpButton problemId={id} />
-              </>
             ) : (
               <>
-                <button className="btn-primary w-full" disabled aria-describedby="lock-why">🔒 {t("problem.take_up")}</button>
-                <p id="lock-why" className="text-sm text-ink-2">{t("problem.locked")} <Link href="/student/onboarding#verify" className="font-semibold underline">{t("vb.cta")}</Link></p>
+                <p className="text-sm text-ink-2">{t("problem.take_help", { business: p.business_name })}</p>
+                {canTake ? (
+                  <TakeUpButton problemId={id} />
+                ) : (
+                  <Link href={`/student/onboarding?next=/student/problems/${id}&intent=takeup`} className="btn-accent w-full">Take up this problem</Link>
+                )}
               </>
             )}
           </div>
@@ -63,6 +65,9 @@ export default async function StudentProblem({ params }: { params: Promise<{ id:
   return (
     <div>
       <BackLink href="/student/problems" label={t("nav.problems")} />
+      {sp.notice === "already" && <Notice kind="info" className="mb-5">You&apos;ve already taken up this problem. Open your workspace to carry on.</Notice>}
+      {sp.notice === "closed" && <Notice kind="warn" className="mb-5">This problem isn&apos;t taking new students any more. Your ID is saved, so you can take up another one straight away.</Notice>}
+      {ring && <ScrollToTakeUp />}
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div>
           <p className="font-semibold text-ink-3">{p.business_name} · {p.business_city}</p>

@@ -7,6 +7,7 @@ import { getRoadmap, statusesFor } from "@/lib/roadmaps";
 import { BackLink, EmptyState } from "@/components/ui";
 import { RoadmapView } from "@/components/RoadmapView";
 import { ProblemCard } from "@/components/ProblemBits";
+import { mineByProblem } from "@/lib/matching";
 import { flattenTopics, RSH_BASE, type RoadmapIntro } from "@/db/roadmaps-data";
 
 // AI calls can take several seconds.
@@ -85,8 +86,9 @@ export default async function RoadmapPage({ params, searchParams }: { params: Pr
   const live = await q(
     `select p.id, p.title, p.categories, p.status, b.business_name,
             (select count(*)::int from engagements e where e.problem_id = p.id and e.status <> 'withdrawn') as takers
-       from problems p join business_profiles b on b.user_id = p.business_id where p.status = 'live' order by p.live_at desc nulls last`,
+       from problems p join business_profiles b on b.user_id = p.business_id where p.status = 'live' order by p.sort_rank asc nulls last, p.live_at desc nulls last`,
   );
+  const mine = await mineByProblem(user.id);
   // "Projects" for this roadmap: live Kadam problems that build experience for the role.
   const forRole = live.filter((p) => (p.categories?.related_roles ?? []).includes(r.role));
   const practise = live.map((p) => ({ id: p.id, title: p.title, business: p.business_name, skills: (p.categories?.skills ?? []) as string[] }));
@@ -117,7 +119,7 @@ export default async function RoadmapPage({ params, searchParams }: { params: Pr
         <>
           <p className="mb-4 max-w-2xl text-ink-2">{t("rm.problems_intro", { role: r.title })}</p>
           <ul className="grid gap-3 md:grid-cols-2">
-            {forRole.map((p) => <li key={p.id}><ProblemCard p={p} t={t} href={`/student/problems/${p.id}`} /></li>)}
+            {forRole.map((p) => <li key={p.id}><ProblemCard p={p} t={t} href={`/student/problems/${p.id}`} takeUp mineId={mine.get(p.id) ?? null} /></li>)}
           </ul>
         </>
       )}

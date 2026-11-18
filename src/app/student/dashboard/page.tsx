@@ -117,7 +117,7 @@ export default async function StudentDashboard() {
                   <Reveal as="ul" className="grid gap-3 md:grid-cols-2">
                     {suggested.map((p, i) => (
                       <li key={p.id} data-reveal className={i === 2 ? "md:col-span-2" : ""}>
-                        <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={cached?.reasons.get(p.id) ?? null} />
+                        <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={cached?.reasons.get(p.id) ?? null} takeUp />
                       </li>
                     ))}
                   </Reveal>

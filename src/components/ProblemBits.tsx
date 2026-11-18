@@ -106,6 +106,8 @@ export function ProblemCard({
   fit,
   reason,
   index = 0,
+  takeUp = false,
+  mineId = null,
 }: {
   p: Row;
   t: T;
@@ -115,22 +117,40 @@ export function ProblemCard({
   /** Raw match reason; rendered with the highlighted role pill. */
   reason?: string | null;
   index?: number;
+  /** Student lists: show the small "Take up" button (hidden for problems that aren't live). */
+  takeUp?: boolean;
+  /** This student's active engagement on the problem: the button becomes "Open". */
+  mineId?: string | null;
 }) {
+  const role = p.categories.related_roles?.[0] ? roleTitle(p.categories.related_roles[0]) : null;
+  const button = takeUp && p.status === "live";
+  // No nested links: the title is the card's link (stretched over the card with ::after); the button is its own link above it.
   return (
-    <Link href={href} className="glow-card card-tap group flex h-full flex-col gap-3 p-5" style={{ "--glow-delay": `${-(index * 3.7) % 18}s` } as React.CSSProperties}>
+    <div className="glow-card card-tap group relative flex h-full flex-col gap-3 p-5 has-[a:focus-visible]:ring-4 has-[a:focus-visible]:ring-primary/25" style={{ "--glow-delay": `${-(index * 3.7) % 18}s` } as React.CSSProperties}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-ink-3">{p.business_name}</p>
-          <h3 className="mt-0.5 text-lg leading-snug font-bold group-hover:underline group-hover:decoration-primary group-hover:decoration-2 group-hover:underline-offset-4">{p.title}</h3>
+          <h3 className="mt-0.5 text-lg leading-snug font-bold">
+            <Link href={href} className="after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:outline-none group-hover:underline group-hover:decoration-primary group-hover:decoration-2 group-hover:underline-offset-4">{p.title}</Link>
+          </h3>
         </div>
         {p.status === "closed" ? <span className="chip shrink-0">{t("status.closed")}</span> : <NewBadge liveAt={p.live_at} t={t} />}
       </div>
-      <CategoryChips c={p.categories} t={t} />
-      {reason ? <FitReason reason={reason} t={t} /> : fit ? <FitReason reason={fit} t={t} /> : null}
-      <div className="mt-auto flex items-center justify-between pt-1">
-        <TakerCount n={p.takers} t={t} />
-        {p.categories.related_roles?.[0] && <span className="text-xs text-ink-3">{roleTitle(p.categories.related_roles[0])}</span>}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <CategoryChips c={p.categories} t={t} />
+        {button && role && <span className="text-xs text-ink-3">{role}</span>}
       </div>
-    </Link>
+      {reason ? <FitReason reason={reason} t={t} /> : fit ? <FitReason reason={fit} t={t} /> : null}
+      <div className="mt-auto flex items-center justify-between gap-3 pt-1">
+        <TakerCount n={p.takers} t={t} />
+        {button ? (
+          <Link href={mineId ? `/student/engagements/${mineId}` : `${href}?takeup=1`} className="btn-primary btn-sm relative z-10 min-h-11 shrink-0 px-5">
+            {mineId ? "Open" : "Take up"}
+          </Link>
+        ) : (
+          role && <span className="text-xs text-ink-3">{role}</span>
+        )}
+      </div>
+    </div>
   );
 }

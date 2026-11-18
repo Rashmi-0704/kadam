@@ -11,11 +11,17 @@ const NEW_DAYS = 3;
 
 export async function liveProblems() {
   return q(
-    `select p.id, p.title, p.categories, p.status, p.live_at, p.created_at, b.business_name, b.city,
+    `select p.id, p.title, p.categories, p.status, p.live_at, p.created_at, p.sort_rank, b.business_name, b.city,
             (select count(*)::int from engagements e where e.problem_id = p.id and e.status <> 'withdrawn') as takers
        from problems p join business_profiles b on b.user_id = p.business_id
-      where p.status = 'live' order by p.live_at desc nulls last`,
+      where p.status = 'live' order by p.sort_rank asc nulls last, p.live_at desc nulls last`,
   );
+}
+
+/** problem id → this student's active engagement id (for the "Open" button on problem cards). */
+export async function mineByProblem(studentId: string): Promise<Map<string, string>> {
+  const rows = await q(`select problem_id, id from engagements where student_id = $1 and status <> 'withdrawn'`, [studentId]);
+  return new Map(rows.map((r) => [r.problem_id as string, r.id as string]));
 }
 
 const HOUR = 36e5;

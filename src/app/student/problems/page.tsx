@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireStudent } from "@/lib/guards";
 import { getT } from "@/lib/i18n/server";
-import { liveProblems, suggestions } from "@/lib/matching";
+import { liveProblems, suggestions, mineByProblem } from "@/lib/matching";
 import { isNewProblem } from "@/lib/reason";
 import { Highlight } from "@/components/motion/Highlight";
 import { ProblemCard } from "@/components/ProblemBits";
@@ -24,6 +24,8 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
   const approved = Boolean(profile.approved_at && profile.pathways);
   const tab = sp.tab === "suggested" || (!sp.tab && approved) ? "suggested" : "all";
   const matches = approved ? await suggestions(user.id, profile, all) : new Map();
+  const mine = await mineByProblem(user.id);
+  const rankOf = (p: { sort_rank?: number | null }) => p.sort_rank ?? Number.MAX_SAFE_INTEGER;
 
   let list = all.filter((p) => {
     const c = p.categories ?? {};
@@ -39,7 +41,7 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
     }
     return true;
   });
-  if (tab === "suggested") list = [...list].filter((p) => matches.has(p.id)).sort((a, b) => (matches.get(b.id)?.score ?? 0) - (matches.get(a.id)?.score ?? 0));
+  if (tab === "suggested") list = [...list].filter((p) => matches.has(p.id)).sort((a, b) => (matches.get(b.id)?.score ?? 0) - (matches.get(a.id)?.score ?? 0) || rankOf(a) - rankOf(b));
 
   const tabLink = (id: "suggested" | "all") => {
     const params = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "tab" && k !== "approved") as [string, string][]);
@@ -58,7 +60,6 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
           </Link>
         ))}
       </div>
-      <FilterBar />
       {(() => {
         const params = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "new" && k !== "approved") as [string, string][]);
         if (!sp.new) params.set("new", "1");
@@ -73,6 +74,7 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
           </div>
         );
       })()}
+      <FilterBar />
       {tab === "suggested" && !approved ? (
         <EmptyState title={t("problems.need_profile")} body={t("problems.need_profile_body")} action={<Link href="/student/profile" className="btn-primary">{t("problems.build_profile")}</Link>} />
       ) : list.length === 0 ? (
@@ -83,7 +85,7 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
         <Reveal as="ul" className="grid gap-3 md:grid-cols-2">
           {list.map((p, i) => (
             <li key={p.id} data-reveal>
-              <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={tab === "suggested" ? matches.get(p.id)?.reason ?? null : null} />
+              <ProblemCard p={p} t={t} index={i} href={`/student/problems/${p.id}`} reason={tab === "suggested" ? matches.get(p.id)?.reason ?? null : null} takeUp mineId={mine.get(p.id) ?? null} />
             </li>
           ))}
         </Reveal>
