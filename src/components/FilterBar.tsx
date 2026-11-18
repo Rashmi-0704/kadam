@@ -12,55 +12,72 @@ const FILTERS = [
   { key: "mode", values: WORK_MODES, prefix: "mode", label: "cat.work_mode" },
 ] as const;
 
+/**
+ * Round 4: the five filters are always visible as thin dropdowns (their first option is the label), with a short search box
+ * on the right that widens on focus (laptop/tablet). Phones: search on top, filters in a two-column grid below.
+ * Filters write to the URL; search commits on Enter or blur.
+ */
 export function FilterBar() {
   const t = useT();
   const router = useRouter();
   const path = usePathname();
   const sp = useSearchParams();
   const [pending, start] = useTransition();
-  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(sp.get("q") ?? "");
   const active = FILTERS.filter((f) => sp.get(f.key)).length;
+  const push = (p: URLSearchParams) => {
+    p.delete("approved");
+    start(() => router.replace(`${path}?${p}`, { scroll: false }));
+  };
   const set = (key: string, value: string) => {
     const p = new URLSearchParams(sp.toString());
     if (value) p.set(key, value);
     else p.delete(key);
-    p.delete("approved");
-    start(() => router.replace(`${path}?${p}`, { scroll: false }));
+    push(p);
   };
+  const clear = () => {
+    const p = new URLSearchParams(sp.toString());
+    FILTERS.forEach((f) => p.delete(f.key));
+    push(p);
+  };
+  const commit = (v: string) => v.trim() !== (sp.get("q") ?? "") && set("q", v.trim());
   return (
-    <div className={`mb-5 ${pending ? "opacity-70" : ""}`}>
-      <div className="flex gap-2">
-        <label className="relative flex-1">
-          <span className="sr-only">{t("filter.search")}</span>
-          <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input defaultValue={sp.get("q") ?? ""} onKeyDown={(e) => e.key === "Enter" && set("q", e.currentTarget.value.trim())} onBlur={(e) => e.currentTarget.value.trim() !== (sp.get("q") ?? "") && set("q", e.currentTarget.value.trim())} placeholder={t("filter.search_ph")} className="input pl-10" type="search" />
-        </label>
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`btn-secondary shrink-0 ${active ? "border-ink" : ""}`}>
-          {t("filter.filters")}{active > 0 && <span className="rounded-full bg-primary px-1.5 text-xs font-bold text-white">{active}</span>}
-        </button>
+    <div className={`fb-row mb-5 flex flex-col gap-2 transition-opacity md:flex-row-reverse md:items-center ${pending ? "opacity-60" : ""}`}>
+      <label className="fb-search relative block min-w-0 max-md:!basis-auto" data-filled={query ? "1" : "0"}>
+        <span className="sr-only">{t("filter.search")}</span>
+        <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && commit(e.currentTarget.value)}
+          onBlur={(e) => commit(e.currentTarget.value)}
+          placeholder={t("filter.search_ph")}
+          className="input min-h-11 w-full py-2 pl-10 text-sm md:min-h-10"
+          type="search"
+        />
+      </label>
+      <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 md:flex md:items-center">
+        {FILTERS.map((f) => {
+          const v = sp.get(f.key) ?? "";
+          return (
+            <select
+              key={f.key}
+              aria-label={t(f.label)}
+              value={v}
+              onChange={(e) => set(f.key, e.target.value)}
+              className={`input min-h-11 min-w-0 truncate py-1.5 pr-7 pl-2.5 text-sm md:min-h-10 md:flex-1 ${v ? "border-primary bg-primary-soft font-semibold text-primary-deep" : "text-ink-2"}`}
+            >
+              <option value="">{t(f.label)}</option>
+              {f.values.map((x) => <option key={x} value={x}>{t(`${f.prefix}.${x}`)}</option>)}
+            </select>
+          );
+        })}
+        {active > 0 && (
+          <button type="button" onClick={clear} className="min-h-11 shrink-0 px-2 text-sm font-semibold text-ink-2 underline underline-offset-4 hover:text-primary-deep md:min-h-10">
+            {t("filter.clear")}
+          </button>
+        )}
       </div>
-      {open && (
-        <div className="card mt-2 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
-          {FILTERS.map((f) => (
-            <div key={f.key}>
-              <label className="label" htmlFor={`f-${f.key}`}>{t(f.label)}</label>
-              <select id={`f-${f.key}`} className="input min-h-11 py-2" value={sp.get(f.key) ?? ""} onChange={(e) => set(f.key, e.target.value)}>
-                <option value="">{t("filter.any")}</option>
-                {f.values.map((v) => <option key={v} value={v}>{t(`${f.prefix}.${v}`)}</option>)}
-              </select>
-            </div>
-          ))}
-        </div>
-      )}
-      {active > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {FILTERS.filter((f) => sp.get(f.key)).map((f) => (
-            <button key={f.key} type="button" onClick={() => set(f.key, "")} className="chip min-h-8 border-primary bg-primary text-white">
-              {t(`${f.prefix}.${sp.get(f.key)}`)} <span aria-hidden="true">✕</span><span className="sr-only">{t("filter.remove")}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
