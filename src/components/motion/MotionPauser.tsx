@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 
-const SELECTOR = ".hl, .hl-pill, .glow-card, .pulse-dot, .wm-band, .float-tag, [data-anim]";
+const SELECTOR = ".hl, .hl-pill, .glow-card, .pulse-dot, .hw-rows, [data-anim]";
 
 /**
  * Pauses CSS animations that are off-screen by adding .anim-off (see globals.css).

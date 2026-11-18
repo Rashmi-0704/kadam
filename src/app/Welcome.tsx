@@ -7,6 +7,7 @@ import { KadamScene, type SceneFocus } from "@/components/scene/KadamScene";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { LockUp } from "@/components/Logo";
 import { RoleTrail } from "@/components/motion/RoleTrail";
+import { HeroWords } from "@/components/motion/HeroWords";
 
 type Text = Record<
   "tagline" | "home" | "who" | "whoSub" | "studentTitle" | "studentSub" | "studentGo" | "businessTitle" | "businessSub" | "businessGo" | "login" | "open" | "note",
@@ -25,6 +26,7 @@ function Door({ href, title, sub, go, icon, onFocus, tone }: { href: string; tit
       onPointerLeave={() => onFocus(false)}
       onFocus={() => onFocus(true)}
       onBlur={() => onFocus(false)}
+      data-trail-block=""
       className={`door group relative flex flex-col items-center gap-4 overflow-hidden rounded-[28px] border-2 p-6 text-center transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 sm:min-h-[340px] sm:justify-center sm:gap-5 sm:p-8 ${
         student
           ? "glow-card border-primary-edge bg-primary text-white shadow-[0_6px_0_var(--color-primary-edge)] hover:bg-[#4f46e5]"
@@ -45,7 +47,7 @@ function Door({ href, title, sub, go, icon, onFocus, tone }: { href: string; tit
   );
 }
 
-export function Welcome({ text, home }: { text: Text; home: string | null }) {
+export function Welcome({ text, home, words }: { text: Text; home: string | null; words: [string, string, string, string] }) {
   const [focus, setFocus] = useState<SceneFocus>("both");
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(
@@ -66,10 +68,11 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
       {/* Background scene, kept behind the choice */}
       <div className="absolute inset-0 opacity-60"><KadamScene focus={focus} /></div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas/95 via-canvas/80 to-canvas/40" aria-hidden="true" />
+      <HeroWords phrases={words} />
       <RoleTrail />
 
       <div className="relative z-10 flex min-h-dvh flex-col">
-        <header className="mx-auto flex h-16 w-full max-w-5xl items-center gap-2 px-4">
+        <header data-trail-block="" className="mx-auto flex h-16 w-full max-w-5xl items-center gap-2 px-4">
           <Link href="/" aria-label="Kadam home"><LockUp tagline={text.tagline} /></Link>
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle compact />
@@ -80,8 +83,8 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pt-4 pb-10">
           <div className="text-center">
             
-            <h1 className="w-fade mt-3 text-[40px] leading-none font-extrabold tracking-tight sm:text-[64px]">{text.who}</h1>
-            <p className="w-fade mx-auto mt-3 max-w-md text-lg text-ink-2">{text.whoSub}</p>
+            <h1 data-trail-block="" className="w-fade mx-auto mt-3 w-fit text-[40px] leading-none font-extrabold tracking-tight sm:text-[64px]">{text.who}</h1>
+            <p data-trail-block="" className="w-fade mx-auto mt-3 max-w-md text-lg text-ink-2">{text.whoSub}</p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-6">
@@ -89,7 +92,7 @@ export function Welcome({ text, home }: { text: Text; home: string | null }) {
             <Door href="/start/business" tone="business" title={text.businessTitle} sub={text.businessSub} go={text.businessGo} icon={BUSINESS_ICON} onFocus={(on) => setFocus(on ? "business" : "both")} />
           </div>
 
-          <p className="w-fade mt-8 text-center text-sm text-ink-3">{text.note}</p>
+          <p data-trail-block="" className="w-fade mx-auto mt-8 w-fit text-center text-sm text-ink-3">{text.note}</p>
         </main>
       </div>
     </div>

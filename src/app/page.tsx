@@ -9,6 +9,7 @@ export default async function WelcomePage() {
   return (
     <Welcome
       home={u?.role ? homeFor(u.role) : null}
+      words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]}
       text={{
         tagline: t("landing.tagline"),
         home: t("nav.home"),

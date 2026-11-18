@@ -37,14 +37,6 @@ const TOWERS = [
   { x: 1250, w: 76, h: 360 }, { x: 1340, w: 64, h: 290 },
 ];
 
-// Floating role tags (at most 4, so the hero stays calm next to the cursor role trail).
-const CHIPS = [
-  { x: 1160, y: 120, w: 170, text: "Data Analyst", dot: "#4338ca", tilt: -5 },
-  { x: 990, y: 250, w: 168, text: "UX Designer", dot: "#ff6b4a", tilt: 4 },
-  { x: 560, y: 330, w: 180, text: "Content Writer", dot: "#16a34a", tilt: -3 },
-  { x: 680, y: 150, w: 158, text: "Operations", dot: "#818cf8", tilt: 6 },
-];
-
 function awningPath(x: number, y: number, w: number) {
   const n = Math.max(4, Math.round(w / 26));
   const sw = w / n;
@@ -73,7 +65,6 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
             .from(".k-step", { scaleY: 0, transformOrigin: "50% 100%", duration: 0.7, stagger: 0.08, ease: "back.out(1.6)" }, 0.8)
             .from(".k-window", { opacity: 0, duration: 0.4, stagger: { each: 0.06, from: "random" } }, 1.2)
             .from(".k-link", { opacity: 0, duration: 0.8, stagger: 0.1 }, 1.4)
-            .from(".k-chip", { opacity: 0, scale: 0.6, transformOrigin: "50% 50%", duration: 0.6, stagger: 0.12, ease: "back.out(2)" }, 1.6)
             .from(".k-student", { opacity: 0, y: 30, duration: 0.6 }, 1.5);
         }
         // Problems flowing from shops to the student.
@@ -82,10 +73,6 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
         // Twinkle + window flicker.
         loops.push(gsap.to(".k-star", { opacity: 0.25, duration: 1.6, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.15, from: "random", repeat: -1, yoyo: true } }));
         loops.push(gsap.to(".k-window", { opacity: 0.55, duration: 0.9, ease: "sine.inOut", repeat: -1, yoyo: true, stagger: { each: 0.4, from: "random", repeat: -1, yoyo: true } }));
-        // Floating outcome chips.
-        gsap.utils.toArray<SVGGElement>(".k-chip").forEach((el, i) => {
-          loops.push(gsap.to(el, { y: i % 2 ? 14 : -14, duration: 3 + i * 0.4, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 2 }));
-        });
         // The student climbs Kadam's steps, one step at a time.
         const climb = gsap.timeline({ repeat: -1, repeatDelay: 0.8, delay: intro ? 2.2 : 0.3 });
         loops.push(climb);
@@ -104,7 +91,6 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
         const qt = [
           { sel: ".k-layer-far", f: 6 },
           { sel: ".k-layer-mid", f: 12 },
-          { sel: ".k-layer-chips", f: 22 },
         ].map(({ sel, f }) => ({ x: gsap.quickTo(sel, "x", { duration: 1.2, ease: "power3" }), y: gsap.quickTo(sel, "y", { duration: 1.2, ease: "power3" }), f }));
         const onMove = (e: PointerEvent) => {
           const r = svg.getBoundingClientRect();
@@ -178,7 +164,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       {/* Career city */}
       <g className="k-layer-far">
         {TOWERS.map((t, i) => (
-          <g key={i} className="k-tower">
+          <g key={i} className="k-tower" data-trail-block="">
             <rect x={t.x} y={GROUND - t.h} width={t.w} height={t.h} rx="4" fill="#dfe3f6" opacity="0.95" />
             {Array.from({ length: Math.floor(t.h / 34) }).map((_, r) =>
               Array.from({ length: Math.max(1, Math.floor(t.w / 22)) }).map((__, c) =>
@@ -213,7 +199,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
         {SHOPS.map((s, i) => {
           const top = GROUND - s.h;
           return (
-            <g key={i} className="k-shop">
+            <g key={i} className="k-shop" data-trail-block="">
               <rect x={s.x} y={top} width={s.w} height={s.h} rx="6" fill="#ffffff" stroke="#c8cee2" strokeWidth="2" />
               <rect x={s.x} y={top} width={s.w} height="10" rx="4" fill="#e3e7f2" />
               <rect x={s.x + s.w / 2 - Math.min(64, s.w / 2 - 10)} y={top + 16} width={Math.min(128, s.w - 20)} height="26" rx="5" fill={s.sign} />
@@ -233,11 +219,11 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       <g className="k-steps">
         {STEPS.map((s, i) => (
           <g key={i}>
-            <rect className="k-step" x={s.x} y={GROUND - s.h} width={STEP_W - 4} height={s.h} rx="6" fill={i === STEPS.length - 1 ? "#ff6b4a" : "url(#k-step)"} />
+            <rect className="k-step" data-trail-block="" x={s.x} y={GROUND - s.h} width={STEP_W - 4} height={s.h} rx="6" fill={i === STEPS.length - 1 ? "#ff6b4a" : "url(#k-step)"} />
             <rect x={s.x} y={GROUND - s.h} width={STEP_W - 4} height="6" rx="3" fill="#fff" opacity="0.35" />
           </g>
         ))}
-        <g className="k-flag">
+        <g className="k-flag" data-trail-block="">
           <rect x={STEPS[6].x + 24} y={GROUND - STEPS[6].h - 70} width="3" height="70" fill="#4338ca" />
           <path d={`M${STEPS[6].x + 27},${GROUND - STEPS[6].h - 70} l38,12 l-38,12 z`} fill="#ff6b4a" />
         </g>
@@ -245,7 +231,7 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
       </g>
 
       {/* Student */}
-      <g className="k-student-wrap">
+      <g className="k-student-wrap" data-trail-block="">
         <g className="k-student" opacity="0">
           <g className="k-student-body">
             <ellipse cx="0" cy="0" rx="13" ry="3" fill="#151a30" opacity="0.15" />
@@ -257,17 +243,6 @@ export function KadamScene({ focus = "both", className = "", intro = true }: { f
             <path d="M-10,-60 q10,-14 20,0 q-4,-5 -10,-4 q-6,-1 -10,4z" fill="#151a30" />
           </g>
         </g>
-      </g>
-
-      {/* Outcome chips */}
-      <g className="k-layer-chips max-md:hidden">
-        {CHIPS.map((c, i) => (
-          <g key={i} className="k-chip" transform={`rotate(${c.tilt} ${c.x + c.w / 2} ${c.y + 20})`}>
-            <rect x={c.x} y={c.y} width={c.w} height="40" rx="20" fill="#ffffff" stroke="#e3e7f2" strokeWidth="1.5" />
-            <circle cx={c.x + 20} cy={c.y + 20} r="6" fill={c.dot} />
-            <text x={c.x + 34} y={c.y + 26} fontFamily="var(--font-nunito), system-ui, sans-serif" fontWeight="800" fontSize="15" fill="#4338ca">{c.text}</text>
-          </g>
-        ))}
       </g>
     </svg>
   );

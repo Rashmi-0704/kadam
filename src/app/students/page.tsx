@@ -4,7 +4,6 @@ import { getT } from "@/lib/i18n/server";
 import { LandingHero } from "@/components/scene/LandingHero";
 import { Reveal, Marquee, CountUp, GrowSteps } from "@/components/scene/Motion";
 import { LockUp } from "@/components/Logo";
-import { WordMarquee } from "@/components/motion/WordMarquee";
 import { Highlight } from "@/components/motion/Highlight";
 import { FaqTabs } from "@/components/home/FaqTabs";
 import { faqTabs } from "@/components/home/faq";
@@ -14,12 +13,6 @@ export const metadata = {
   title: "For students",
   description: "Kadam. Take your first step. Solve real problems for small businesses and NGOs, and turn the results into an impact report for your resume.",
 };
-
-const WORDS: [string[], string[], string[]] = [
-  ["Take your first step", "Prove it", "Real problems"],
-  ["Real impact", "Build your path", "Get noticed"],
-  ["Learn by doing", "Show your work", "Find your fit"],
-];
 
 // Student homepage. English only, by design: no language switch for students.
 export default async function StudentsHome() {
@@ -46,10 +39,9 @@ export default async function StudentsHome() {
         switchLabel="I run a business or NGO instead →"
         switchHref="/start/business"
         showLanguage={false}
+        words={["Real problems", "Real solutions", "Real impact", "Take your first step"]}
       />
 
-      <WordMarquee rows={WORDS} />
-      <p className="sr-only">Take your first step and prove it on real problems. Real impact: build your path and get noticed. Learn by doing, show your work and find your fit.</p>
 
       <div className="border-y-2 border-primary-edge bg-primary py-3 font-display text-lg font-bold text-white">
         <Marquee items={titles} />

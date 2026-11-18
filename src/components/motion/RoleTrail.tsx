@@ -1,163 +1,185 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ROLES } from "@/db/taxonomy";
+import { TRAIL_ROLES } from "@/db/trail-roles";
 
 /*
- * <RoleTrail>: career role names pop up under the pointer as it moves across the hero, then fade.
- * - New pill only after ≥ 90 px of movement AND ≥ 80 ms since the last one; at most one check per frame.
- * - A pool of 12 elements; the 13th pill recycles the oldest immediately.
- * - transform + opacity only (Web Animations API). Passive listeners, never preventDefault.
- * - Listeners are removed while the hero is off-screen. Reduced motion: 4 still pills at the edges.
- * Place it as the first child of a `relative` hero; it listens on its parent element.
+ * <RoleTrail>: a short trail of job-role boxes that follows the pointer over EMPTY hero background.
+ * - Lives inside the hero <section> (the layer is absolute inset-0; listeners go on its parent).
+ * - Anything marked [data-trail-block] (expanded by 16 px) blocks new boxes. Boxes are cached and
+ *   re-measured on resize, scroll and font load only.
+ * - A box appears when the pointer moved >= 60 px and >= 50 ms since the last one. Life: 120 ms in,
+ *   900 ms hold, 300 ms out, so the trail retracts oldest-first. At most 10 visible; the 11th sends the
+ *   oldest out at once. Pool of 12 elements, transform/opacity only (Web Animations API).
+ * - A dashed polyline joins the centres of the visible boxes, in order.
+ * - Touch: dragging draws the same trail (passive listeners, scrolling still works); a tap shows one box.
+ * - Off-screen hero: listeners are removed. Reduced motion: nothing at all.
  */
 
-const POOL = 12;
-const MIN_DIST = 90;
-const MIN_GAP_MS = 80;
-const POP = 150;
-const HOLD = 400;
-const FADE = 900;
-const TOTAL = POP + HOLD + FADE;
+const POOL = 12, MAX = 10, GAP = 60, MIN_MS = 50, IN = 120, HOLD = 900, OUT = 300, PAD = 16;
+const LIFE = IN + HOLD + OUT;
 
-const EXTRA = ["Product Manager", "Operations Associate", "Social Media Manager", "Backend Developer", "Sales & Business Development", "HR / People Operations"];
-const ROLE_NAMES = Array.from(new Set([...ROLES.map((r) => r.title), ...EXTRA]));
+type Slot = { el: HTMLDivElement; text: HTMLSpanElement; anim: Animation | null; x: number; y: number; born: number; out: boolean; live: boolean; base: string };
 
-function shuffled<T>(a: T[]): T[] {
+function shuffled<T>(a: readonly T[]) {
   const b = [...a];
-  for (let i = b.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [b[i], b[j]] = [b[j], b[i]];
-  }
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
   return b;
 }
 
-const PILL = "absolute whitespace-nowrap rounded-full border-[1.5px] bg-white px-3 py-1.5 font-display text-[14px] leading-none font-bold";
-const NORMAL = "border-line text-primary";
-const ACCENT = "border-highlight text-highlight-deep";
-const SHADOW = { boxShadow: "0 4px 12px rgba(67, 56, 202, 0.12)" };
-
-const STILL = [
-  { text: "Data Analyst", style: { right: "4%", top: "14%" }, tilt: -6, accent: false },
-  { text: "UX Designer", style: { right: "18%", bottom: "10%" }, tilt: 5, accent: true },
-  { text: "Content Writer", style: { left: "3%", bottom: "5%" }, tilt: 4, accent: false },
-  { text: "Operations Associate", style: { right: "3%", top: "52%" }, tilt: -3, accent: false },
-];
-
 export function RoleTrail() {
   const layer = useRef<HTMLDivElement>(null);
-  const pills = useRef<(HTMLSpanElement | null)[]>([]);
-  const [reduced, setReduced] = useState(false);
+  const line = useRef<SVGPolylineElement>(null);
+  const [on, setOn] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    const set = () => setOn(!mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
   }, []);
 
   useEffect(() => {
-    if (reduced) return;
-    const host = layer.current?.parentElement;
-    if (!host) return;
-    let queue = shuffled(ROLE_NAMES);
+    if (!on) return;
+    const root = layer.current!;
+    const hero = root.parentElement!;
+    const slots: Slot[] = Array.from(root.querySelectorAll<HTMLDivElement>("[data-slot]")).map((el) => ({
+      el, text: el.querySelector("span:last-child") as HTMLSpanElement, anim: null, x: 0, y: 0, born: 0, out: false, live: false, base: "",
+    }));
+    let order: Slot[] = []; // visible boxes, oldest first
+    let roles = shuffled(TRAIL_ROLES);
+    let next = 0;
     let count = 0;
-    let last: { x: number; y: number; t: number } | null = null;
+    let last = { x: -1e9, y: -1e9, t: 0 };
+    let blocks: DOMRect[] = [];
+    let heroBox = hero.getBoundingClientRect();
     let pending: { x: number; y: number } | null = null;
     let raf = 0;
-    const anims: (Animation | null)[] = Array(POOL).fill(null);
+    let measureRaf = 0;
 
-    const nextRole = () => {
-      if (!queue.length) queue = shuffled(ROLE_NAMES);
-      return queue.shift()!;
+    const measure = () => {
+      heroBox = hero.getBoundingClientRect();
+      blocks = Array.from(hero.querySelectorAll("[data-trail-block]")).map((e) => e.getBoundingClientRect());
+    };
+    const remeasure = () => { cancelAnimationFrame(measureRaf); measureRaf = requestAnimationFrame(measure); };
+    const blocked = (x: number, y: number) =>
+      blocks.some((r) => r.width > 0 && x >= r.left - PAD && x <= r.right + PAD && y >= r.top - PAD && y <= r.bottom + PAD);
+
+    const drawLine = () => {
+      line.current?.setAttribute("points", order.filter((s) => !s.out).map((s) => `${s.x},${s.y}`).join(" "));
+    };
+    const retire = (s: Slot) => {
+      if (s.out) return;
+      s.out = true;
+      drawLine();
+      const elapsed = performance.now() - s.born;
+      if (elapsed < IN + HOLD) {
+        // Sent out early (11th box): fade from where it is now.
+        s.anim?.cancel();
+        s.anim = s.el.animate(
+          [{ opacity: 1, transform: `${s.base} scale(1)` }, { opacity: 0, transform: `${s.base} scale(0.85)` }],
+          { duration: OUT, easing: "ease-in", fill: "forwards" },
+        );
+        s.anim.onfinish = () => free(s);
+      }
+    };
+    const free = (s: Slot) => {
+      s.live = false;
+      s.out = false;
+      order = order.filter((o) => o !== s);
+      drawLine();
     };
 
     const spawn = (x: number, y: number) => {
-      const i = count % POOL;
-      const el = pills.current[i];
-      if (!el) return;
-      anims[i]?.cancel();
-      count += 1;
-      el.textContent = nextRole();
-      el.className = `${PILL} top-0 left-0 ${count % 4 === 0 ? ACCENT : NORMAL}`;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      const W = host.clientWidth;
-      const H = host.clientHeight;
-      // Centre on the pointer, nudged inward so the pill stays fully inside the hero.
-      const left = Math.min(Math.max(x - w / 2, 4), Math.max(4, W - w - 4));
-      const top = Math.min(Math.max(y - h / 2, 4), Math.max(4, H - h - 4));
-      const tilt = Math.random() * 16 - 8;
-      const base = `translate3d(${left}px, ${top}px, 0) rotate(${tilt}deg)`;
-      const lift = `translate3d(${left}px, ${top - 16}px, 0) rotate(${tilt}deg)`;
-      anims[i] = el.animate(
+      const s = slots.find((o) => !o.live) ?? order[0];
+      if (!s) return;
+      if (s.live) { s.anim?.cancel(); free(s); }
+      if (next >= roles.length) { roles = shuffled(TRAIL_ROLES); next = 0; }
+      s.text.textContent = roles[next++];
+      count++;
+      s.el.dataset.accent = count % 4 === 0 ? "1" : "";
+      // Centre on the pointer, nudged inside the hero.
+      const w = s.el.offsetWidth, h = s.el.offsetHeight;
+      const lx = Math.min(Math.max(x - heroBox.left, w / 2 + 4), heroBox.width - w / 2 - 4);
+      const ly = Math.min(Math.max(y - heroBox.top, h / 2 + 4), heroBox.height - h / 2 - 4);
+      const tilt = (Math.random() * 8 - 4).toFixed(1);
+      s.base = `translate(${(lx - w / 2).toFixed(1)}px, ${(ly - h / 2).toFixed(1)}px) rotate(${tilt}deg)`;
+      s.x = lx; s.y = ly; s.born = performance.now(); s.out = false; s.live = true;
+      order.push(s);
+      s.anim = s.el.animate(
         [
-          { opacity: 0, transform: `${base} scale(0.6)`, easing: "ease-out" },
-          { opacity: 1, transform: `${base} scale(1)`, offset: POP / TOTAL, easing: "linear" },
-          { opacity: 1, transform: `${base} scale(1)`, offset: (POP + HOLD) / TOTAL, easing: "ease-in" },
-          { opacity: 0, transform: `${lift} scale(0.9)` },
+          { opacity: 0, transform: `${s.base} scale(0.7)`, offset: 0, easing: "ease-out" },
+          { opacity: 1, transform: `${s.base} scale(1)`, offset: IN / LIFE },
+          { opacity: 1, transform: `${s.base} scale(1)`, offset: (IN + HOLD) / LIFE, easing: "ease-in" },
+          { opacity: 0, transform: `${s.base} scale(0.85)`, offset: 1 },
         ],
-        { duration: TOTAL, fill: "none" },
+        { duration: LIFE, fill: "forwards" },
       );
-      last = { x, y, t: performance.now() };
+      const me = s.anim;
+      // The line drops this point when its fade-out starts, so it shrinks with the trail.
+      window.setTimeout(() => { if (s.anim === me && s.live) { s.out = true; drawLine(); } }, IN + HOLD);
+      me.onfinish = () => { if (s.anim === me) free(s); };
+      const visible = order.filter((o) => !o.out);
+      if (visible.length > MAX) retire(visible[0]);
+      drawLine();
     };
 
     const frame = () => {
       raf = 0;
       if (!pending) return;
-      const p = pending;
+      const { x, y } = pending;
       pending = null;
       const now = performance.now();
-      if (!last || (Math.hypot(p.x - last.x, p.y - last.y) >= MIN_DIST && now - last.t >= MIN_GAP_MS)) spawn(p.x, p.y);
+      const inside = x >= heroBox.left && x <= heroBox.right && y >= heroBox.top && y <= heroBox.bottom;
+      if (!inside || blocked(x, y)) return;
+      if (Math.hypot(x - last.x, y - last.y) < GAP || now - last.t < MIN_MS) return;
+      last = { x, y, t: now };
+      spawn(x, y);
     };
+    const queue = (x: number, y: number) => { pending = { x, y }; if (!raf) raf = requestAnimationFrame(frame); };
+    const onMove = (e: PointerEvent) => { if (e.pointerType !== "touch") queue(e.clientX, e.clientY); };
+    const onTouch = (e: TouchEvent) => { const t = e.touches[0]; if (t) queue(t.clientX, t.clientY); };
+    const onTap = (e: TouchEvent) => { const t = e.touches[0]; if (t) { last = { x: -1e9, y: -1e9, t: 0 }; queue(t.clientX, t.clientY); } };
 
-    const local = (e: PointerEvent) => {
-      const r = host.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    let listening = false;
+    const listen = (yes: boolean) => {
+      if (yes === listening) return;
+      listening = yes;
+      const f = yes ? "addEventListener" : "removeEventListener";
+      hero[f]("pointermove", onMove as EventListener, { passive: true } as AddEventListenerOptions);
+      hero[f]("touchstart", onTap as EventListener, { passive: true } as AddEventListenerOptions);
+      hero[f]("touchmove", onTouch as EventListener, { passive: true } as AddEventListenerOptions);
+      window[f]("scroll", remeasure, { passive: true } as AddEventListenerOptions);
+      window[f]("resize", remeasure, { passive: true } as AddEventListenerOptions);
+      if (yes) measure();
     };
-    const onMove = (e: PointerEvent) => {
-      pending = local(e);
-      if (!raf) raf = requestAnimationFrame(frame);
-    };
-    const onDown = (e: PointerEvent) => {
-      if (e.pointerType === "mouse") return;
-      const p = local(e);
-      spawn(p.x, p.y);
-    };
-
-    let attached = false;
-    const attach = () => {
-      if (attached) return;
-      attached = true;
-      host.addEventListener("pointermove", onMove, { passive: true });
-      host.addEventListener("pointerdown", onDown, { passive: true });
-    };
-    const detach = () => {
-      if (!attached) return;
-      attached = false;
-      host.removeEventListener("pointermove", onMove);
-      host.removeEventListener("pointerdown", onDown);
-      pending = null;
-    };
-    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? attach() : detach()));
-    io.observe(host);
+    const io = new IntersectionObserver(([e]) => listen(e.isIntersecting));
+    io.observe(hero);
+    document.fonts?.ready.then(remeasure);
+    // The hero's own entrance animation moves text for ~2 s: measure again once it has settled.
+    const settle = window.setTimeout(remeasure, 2200);
     return () => {
       io.disconnect();
-      detach();
+      listen(false);
       cancelAnimationFrame(raf);
-      anims.forEach((a) => a?.cancel());
+      cancelAnimationFrame(measureRaf);
+      window.clearTimeout(settle);
+      slots.forEach((s) => s.anim?.cancel());
     };
-  }, [reduced]);
+  }, [on]);
 
+  if (!on) return null;
   return (
-    <div ref={layer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" aria-hidden="true">
-      {reduced
-        ? STILL.map((s) => (
-            <span key={s.text} className={`${PILL} ${s.accent ? ACCENT : NORMAL}`} style={{ ...s.style, transform: `rotate(${s.tilt}deg)`, ...SHADOW }}>{s.text}</span>
-          ))
-        : Array.from({ length: POOL }).map((_, i) => (
-            <span key={i} ref={(el) => { pills.current[i] = el; }} className={`${PILL} top-0 left-0 ${NORMAL}`} style={{ opacity: 0, willChange: "transform, opacity", ...SHADOW }} />
-          ))}
+    <div ref={layer} className="role-trail pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <polyline ref={line} fill="none" stroke="#818CF8" strokeOpacity="0.35" strokeWidth="2" strokeDasharray="4 6" strokeLinejoin="round" strokeLinecap="round" />
+      </svg>
+      {Array.from({ length: POOL }).map((_, i) => (
+        <div key={i} data-slot="" className="rt-box">
+          <span className="rt-dot" />
+          <span />
+        </div>
+      ))}
     </div>
   );
 }

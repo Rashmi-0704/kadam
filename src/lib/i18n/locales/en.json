@@ -724,16 +724,6 @@
   "chat.sending": "Sending…",
   "chat.sent": "Sent",
   "strip.student": "Are you a student? Find a real problem →",
-  "wm.b1": "Post a problem",
-  "wm.b2": "Get it solved",
-  "wm.b3": "Fresh ideas",
-  "wm.b4": "Real students",
-  "wm.b5": "Real solutions",
-  "wm.b6": "Track the impact",
-  "wm.b7": "Speak in your language",
-  "wm.b8": "Free to post",
-  "wm.b9": "See what changed",
-  "wm.sr": "Post a problem, get it solved, with fresh ideas from real students. Real solutions, and you track the impact. Speak in your language, it's free to post, and you see what changed.",
   "faq.title": "Questions, answered",
   "faq.tab_students": "Students",
   "faq.tab_businesses": "Businesses",
@@ -805,5 +795,9 @@
   "auth.old_sub": "Type the email you joined Kadam with.",
   "auth.back_signin": "Back to sign in",
   "err.password_mismatch": "The two passwords don't match",
-  "err.password_already_set": "This account already has a password. Sign in with it."
+  "err.password_already_set": "This account already has a password. Sign in with it.",
+  "hw.p1": "Real problems",
+  "hw.p2": "Real solutions",
+  "hw.p3": "Real impact",
+  "hw.p4": "Take your first step"
 }

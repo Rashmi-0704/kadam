@@ -8,6 +8,7 @@ import { SplitHeading } from "./Motion";
 import { LockUp } from "@/components/Logo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { RoleTrail } from "@/components/motion/RoleTrail";
+import { HeroWords } from "@/components/motion/HeroWords";
 
 export function LandingHero({
   focus,
@@ -26,6 +27,7 @@ export function LandingHero({
   switchLabel,
   switchHref,
   showLanguage,
+  words,
   children,
 }: {
   focus: SceneFocus;
@@ -44,6 +46,8 @@ export function LandingHero({
   switchLabel: string;
   switchHref: string;
   showLanguage: boolean;
+  /** Real problems, Real solutions, Real impact, Take your first step (already translated). */
+  words: [string, string, string, string];
   children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -70,9 +74,10 @@ export function LandingHero({
       <section className="relative overflow-hidden bg-canvas text-ink">
         <div className="absolute inset-x-0 bottom-0 h-[52%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[62%]"><KadamScene focus={focus} /></div>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-canvas via-canvas/85 to-canvas/0 md:bg-gradient-to-r md:from-canvas md:from-35% md:via-canvas/40 md:via-55% md:to-canvas/0 md:to-80%" aria-hidden="true" />
+        <HeroWords phrases={words} />
         <RoleTrail />
         <div className="relative z-10">
-          <header className="mx-auto flex min-h-16 max-w-6xl items-center gap-2 px-4 py-2">
+          <header data-trail-block="" className="mx-auto flex min-h-16 max-w-6xl items-center gap-2 px-4 py-2">
             <Link href="/" aria-label="Kadam home"><LockUp tagline={tagline} /></Link>
             <div className="ml-auto flex items-center gap-2">
               {showLanguage && <LanguageToggle compact />}
@@ -81,16 +86,16 @@ export function LandingHero({
           </header>
           <div className="mx-auto grid min-h-[calc(88dvh-4rem)] max-w-6xl grid-cols-1 items-start gap-10 px-4 pt-6 pb-[48vh] md:grid-cols-[1.1fr_1fr] md:items-center md:pb-16">
             <div>
-              <p className="h-fade eyebrow">{eyebrow}</p>
-              <SplitHeading text={h1} accent={accent} className="mt-3 text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]" />
-              <p className="h-fade mt-5 max-w-xl text-lg text-ink-2">{sub}</p>
+              <p data-trail-block="" className="h-fade eyebrow w-fit">{eyebrow}</p>
+              <div data-trail-block=""><SplitHeading text={h1} accent={accent} className="mt-3 text-[38px] leading-[1.03] font-extrabold tracking-tight sm:text-[58px]" /></div>
+              <p data-trail-block="" className="h-fade mt-5 max-w-xl text-lg text-ink-2">{sub}</p>
               <div className="h-fade mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href={ctaHref} className="btn-primary px-8 text-base">{cta} <span aria-hidden="true">→</span></Link>
-                <a href={secondaryHref} className="btn-secondary px-7">{secondary}</a>
+                <Link data-trail-block="" href={ctaHref} className="btn-primary px-8 text-base">{cta} <span aria-hidden="true">→</span></Link>
+                <a data-trail-block="" href={secondaryHref} className="btn-secondary px-7">{secondary}</a>
               </div>
-              <Link href={switchHref} className="h-fade mt-6 inline-block text-sm font-semibold text-ink-2 underline decoration-line-deep underline-offset-4 hover:text-primary-deep">{switchLabel}</Link>
+              <Link data-trail-block="" href={switchHref} className="h-fade mt-6 inline-block text-sm font-semibold text-ink-2 underline decoration-line-deep underline-offset-4 hover:text-primary-deep">{switchLabel}</Link>
             </div>
-            {children && <div className="h-card hidden md:block">{children}</div>}
+            {children && <div data-trail-block="" className="h-card hidden md:block">{children}</div>}
           </div>
         </div>
       </section>

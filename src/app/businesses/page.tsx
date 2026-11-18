@@ -4,7 +4,6 @@ import { LandingHero } from "@/components/scene/LandingHero";
 import { Reveal, GrowSteps } from "@/components/scene/Motion";
 import { VoiceDemo } from "@/components/scene/VoiceDemo";
 import { LockUp } from "@/components/Logo";
-import { WordMarquee } from "@/components/motion/WordMarquee";
 import { Highlight } from "@/components/motion/Highlight";
 import { FaqTabs } from "@/components/home/FaqTabs";
 import { faqTabs } from "@/components/home/faq";
@@ -41,10 +40,8 @@ export default async function BusinessesHome() {
         switchLabel={t("bl.switch")}
         switchHref="/start/student"
         showLanguage
+        words={[t("hw.p1"), t("hw.p2"), t("hw.p3"), t("hw.p4")]}
       />
-
-      <WordMarquee rows={[[t("wm.b1"), t("wm.b2"), t("wm.b3")], [t("wm.b4"), t("wm.b5"), t("wm.b6")], [t("wm.b7"), t("wm.b8"), t("wm.b9")]]} />
-      <p className="sr-only">{t("wm.sr")}</p>
 
       <section className="border-b border-line bg-mist">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-5 text-sm font-semibold text-ink-2">
