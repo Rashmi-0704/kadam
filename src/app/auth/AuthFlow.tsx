@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useState } from "react";
-import { signIn, signUp, chooseRole, type AuthState } from "@/app/actions/auth";
+import { signIn, signUp, chooseRole, setFirstPassword, checkOldAccount, type AuthState } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
 import { useT } from "@/lib/i18n/client";
 
@@ -58,8 +58,14 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [role, setRole] = useState<Role | undefined>(defaultRole);
   const [show, setShow] = useState(false);
+  const [pwState, pwAction] = useActionState<AuthState, FormData>(setFirstPassword, {});
+  const [oldState, oldAction] = useActionState<AuthState, FormData>(checkOldAccount, {});
+  // "Old" = joined with an email link and has no password yet. The server decides; "Not you?" dismisses that answer.
+  const [dismissed, setDismissed] = useState<AuthState[]>([]);
+  const [askOld, setAskOld] = useState(false);
+  const setpw = [pwState, oldState, inState, upState].find((s) => s.step === "setpw" && !dismissed.includes(s));
 
-  const signedIn = initialStep === "role" || inState.step === "role" || upState.step === "role";
+  const signedIn = initialStep === "role" || inState.step === "role" || upState.step === "role" || pwState.step === "role";
   const state = mode === "signin" ? inState : upState;
   // "That email already has an account" switches to sign-in with the email kept.
   const email = state.email ?? (mode === "signin" ? upState.email : inState.email) ?? "";
@@ -89,7 +95,48 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
       </form>
     );
 
-  const switchTo = (m: "signin" | "signup") => setMode(m);
+  const switchTo = (m: "signin" | "signup") => { setAskOld(false); setMode(m); };
+
+  if (setpw?.email)
+    return (
+      <SetPasswordForm
+        key={setpw.email}
+        email={setpw.email}
+        error={pwState.step === "setpw" ? pwState.error : undefined}
+        action={pwAction}
+        role={role}
+        onRole={() => setRole(undefined)}
+        onNotYou={() => { setDismissed((d) => [...d, pwState, oldState, inState, upState]); setAskOld(false); setMode("signin"); }}
+      />
+    );
+
+  if (askOld)
+    return (
+      <form action={oldAction} className="space-y-5">
+        <RoleBadge role={role} onChange={() => setRole(undefined)} />
+        <div>
+          <h1 className="text-2xl font-bold">{t("auth.old_title")}</h1>
+          <p className="mt-1 text-ink-2">{t("auth.old_sub")}</p>
+        </div>
+        <div>
+          <label className="label" htmlFor="old-email">{t("auth.email")}</label>
+          <input id="old-email" name="email" type="email" inputMode="email" autoComplete="email" required className="input" defaultValue={oldState.email ?? email} autoFocus />
+        </div>
+        {oldState.error && (
+          <div className="rounded-xl border-2 border-alert/30 bg-alert-soft p-3 text-sm font-semibold text-alert" role="alert">
+            {t(oldState.error)}
+            {oldState.error === "err.password_already_set" && (
+              <button type="button" onClick={() => switchTo("signin")} className="mt-2 block font-bold text-primary-deep underline underline-offset-2">{t("auth.tab_signin")} →</button>
+            )}
+          </div>
+        )}
+        <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("common.continue")}</SubmitButton>
+        <button type="button" onClick={() => switchTo("signin")} className="block w-full text-center text-sm font-semibold text-ink-2 underline underline-offset-2">{t("auth.back_signin")}</button>
+      </form>
+    );
+
+  // "This account already has a password" from the set-password step lands here, on sign-in.
+  const pwBack = pwState.error === "err.password_already_set" && !dismissed.includes(pwState) ? pwState : null;
   return (
     <form key={mode} action={mode === "signin" ? inAction : upAction} className="space-y-5">
       <RoleBadge role={role} onChange={() => setRole(undefined)} />
@@ -120,9 +167,9 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
         </div>
         {mode === "signup" && <p className="mt-2 text-xs text-ink-3">{t("auth.password_hint")}</p>}
       </div>
-      {state.error && (
+      {(pwBack?.error ?? state.error) && (
         <div className="rounded-xl border-2 border-alert/30 bg-alert-soft p-3 text-sm font-semibold text-alert" role="alert">
-          {t(state.error)}
+          {t((pwBack?.error ?? state.error)!)}
           {state.error === "err.account_exists" && (
             <button type="button" onClick={() => switchTo("signin")} className="mt-2 block font-bold text-primary-deep underline underline-offset-2">{t("auth.tab_signin")} →</button>
           )}
@@ -132,6 +179,60 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
         <a href="/demo" className="btn-secondary w-full">{t("auth.try_demo")}</a>
       )}
       <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t(mode === "signup" ? "auth.create" : "auth.signin_btn")}</SubmitButton>
+      {mode === "signin" && (
+        <button type="button" onClick={() => setAskOld(true)} className="block w-full text-center text-sm font-semibold text-primary-deep underline underline-offset-2">
+          {t("auth.old_link")}
+        </button>
+      )}
+    </form>
+  );
+}
+
+function SetPasswordForm({ email, error, action, role, onRole, onNotYou }: {
+  email: string; error?: string; action: (f: FormData) => void; role: Role; onRole: () => void; onNotYou: () => void;
+}) {
+  const t = useT();
+  const [show, setShow] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => {
+        const f = new FormData(e.currentTarget);
+        if (String(f.get("password")) !== String(f.get("confirm"))) { e.preventDefault(); setMismatch(true); }
+      }}
+      className="space-y-5"
+    >
+      <RoleBadge role={role} onChange={onRole} />
+      <div>
+        <h1 className="text-2xl font-bold">{t("auth.setpw_title")}</h1>
+        <p className="mt-1 text-ink-2">{t("auth.setpw_sub")}</p>
+      </div>
+      <div>
+        <label className="label" htmlFor="setpw-email">{t("auth.email")}</label>
+        <input id="setpw-email" type="email" value={email} readOnly aria-readonly="true" className="input cursor-not-allowed bg-mist text-ink-2" />
+        <input type="hidden" name="email" value={email} />
+      </div>
+      <div>
+        <label className="label" htmlFor="new-password">{t("auth.new_password")}</label>
+        <div className="relative">
+          <input id="new-password" name="password" type={show ? "text" : "password"} required minLength={8} maxLength={72} autoComplete="new-password" className="input pr-20" autoFocus onChange={() => setMismatch(false)} />
+          <button type="button" onClick={() => setShow((s) => !s)} className="absolute inset-y-0 right-2 my-auto h-9 rounded-lg px-3 text-sm font-semibold text-primary-deep hover:bg-primary-soft">
+            {t(show ? "auth.hide" : "auth.show")}
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-ink-3">{t("auth.password_hint")}</p>
+      </div>
+      <div>
+        <label className="label" htmlFor="confirm-password">{t("auth.password_again")}</label>
+        <input id="confirm-password" name="confirm" type={show ? "text" : "password"} required minLength={8} maxLength={72} autoComplete="new-password" className="input" aria-invalid={mismatch || error === "err.password_mismatch"} aria-describedby="confirm-error" onChange={() => setMismatch(false)} />
+        {(mismatch || error === "err.password_mismatch") && <p id="confirm-error" className="mt-2 text-sm font-semibold text-alert" role="alert">{t("err.password_mismatch")}</p>}
+      </div>
+      {error && error !== "err.password_mismatch" && (
+        <div className="rounded-xl border-2 border-alert/30 bg-alert-soft p-3 text-sm font-semibold text-alert" role="alert">{t(error)}</div>
+      )}
+      <SubmitButton className="btn-primary w-full" pendingLabel={t("auth.checking")}>{t("auth.setpw_btn")}</SubmitButton>
+      <button type="button" onClick={onNotYou} className="block w-full text-center text-sm font-semibold text-ink-2 underline underline-offset-2">{t("auth.not_you")}</button>
     </form>
   );
 }

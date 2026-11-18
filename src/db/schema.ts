@@ -4,6 +4,8 @@
 // Small upgrades for databases created before a column existed. Safe to run on every start.
 export const UPGRADE_SQL = `
 alter table roadmap_progress add column if not exists statuses jsonb not null default '{}'::jsonb;
+-- Round 3: when an old link-made account (or an admin reset) set its password.
+alter table users add column if not exists password_set_at timestamptz;
 create table if not exists ai_usage (bucket text not null, feature text not null, calls int not null default 0, limited int not null default 0, failed int not null default 0, primary key (bucket, feature));
 alter table ai_usage enable row level security;
 -- Every live or closed problem has a go-live date (drives the "New" badge and ranking).
@@ -21,6 +23,7 @@ create table if not exists users (
   phone text,
   language_pref text not null default 'en',
   consent_at timestamptz,
+  password_set_at timestamptz,
   created_at timestamptz not null default now()
 );
 

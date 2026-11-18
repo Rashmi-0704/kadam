@@ -778,7 +778,6 @@
   "err.auth_busy": "Lots of sign-ins right now. Please wait a minute and try again.",
   "err.account_exists": "There's already an account with this email. Sign in with your password instead.",
   "err.password_wrong": "That email and password don't match. Check them and try again.",
-  "err.password_wrong_or_old": "That password didn't work. If you joined Kadam before passwords existed, your account has no password yet: sign up with a different email, or ask the Kadam team to reset it.",
   "verify.email_submit": "Verify me",
   "ai.busy_last": "AI is busy, showing your last result. Try again in a minute.",
   "ai.busy_basic": "AI is busy, so this is a simpler version for now. Try again in a minute.",
@@ -794,5 +793,17 @@
   "admin.ai_failed": "Failed",
   "admin.ai_none": "No Gemini calls yet today.",
   "admin.ai_week": "Last 7 days",
-  "admin.ai_total": "Total"
+  "admin.ai_total": "Total",
+  "auth.setpw_title": "Welcome back! Set your password",
+  "auth.setpw_sub": "You joined Kadam with an email link, so your account has no password yet. Create one now. You'll use it every time you sign in.",
+  "auth.new_password": "New password",
+  "auth.password_again": "Type it again",
+  "auth.setpw_btn": "Save password and sign in",
+  "auth.not_you": "Not you? Use a different email",
+  "auth.old_link": "Joined with an email link before? Set your password →",
+  "auth.old_title": "Set a password for your account",
+  "auth.old_sub": "Type the email you joined Kadam with.",
+  "auth.back_signin": "Back to sign in",
+  "err.password_mismatch": "The two passwords don't match",
+  "err.password_already_set": "This account already has a password. Sign in with it."
 }

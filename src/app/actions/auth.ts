@@ -7,11 +7,13 @@ import { ensureAdmin, isAdminEmail } from "@/lib/admin-account";
 import { q, one, resetDemoData } from "@/lib/db";
 import { setSession, currentUser, homeFor } from "@/lib/session";
 import { DEMO_ACCOUNTS } from "@/db/seed-data";
+import { hasNoPassword, findAuthUserId, setAuthPassword } from "@/lib/legacy-auth";
+import { setFirstPasswordCore } from "@/lib/first-password";
 
 const Email = z.string().trim().toLowerCase().email();
 const Password = z.string().min(8).max(72);
 
-export type AuthState = { ok?: boolean; error?: string; step?: "role"; email?: string; mode?: "signin" | "signup" };
+export type AuthState = { ok?: boolean; error?: string; step?: "role" | "setpw"; email?: string; mode?: "signin" | "signup" };
 
 /** Sign-in with email + password. Kadam sends no auth emails at all (see BUILD_LOG: switching email flows back on needs custom SMTP). */
 async function startSession(email: string): Promise<AuthState> {
@@ -28,6 +30,8 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const password = Password.safeParse(String(form.get("password") ?? ""));
   if (!password.success) return { error: "err.password_short", email: email.data, mode: "signup" };
   if (!hasSupabaseAdmin()) return { error: "err.auth_unavailable", email: email.data, mode: "signup" };
+  // An account made with an email link (no password yet) sets its password instead of "account exists".
+  if (await hasNoPassword(email.data)) return { step: "setpw", email: email.data, mode: "signup" };
   // Created on the server with the service key and confirmed straight away: no email is sent, whatever the dashboard's "Confirm email" setting is.
   const { error } = await adminClient().auth.admin.createUser({ email: email.data, password: password.data, email_confirm: true });
   if (error) {
@@ -50,11 +54,47 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   const { error } = await authClient().auth.signInWithPassword({ email: email.data, password });
   if (error) {
     if (error.status === 429) return { error: "err.auth_busy", email: email.data, mode: "signin" };
-    // An address that signed in with an email link before passwords existed has no password yet.
-    const known = await one(`select 1 from users where email = $1`, [email.data]);
-    return { error: known ? "err.password_wrong_or_old" : "err.password_wrong", email: email.data, mode: "signin" };
+    // An address that joined with an email link before passwords existed sets its password once.
+    if (await hasNoPassword(email.data)) return { step: "setpw", email: email.data, mode: "signin" };
+    return { error: "err.password_wrong", email: email.data, mode: "signin" };
   }
   return startSession(email.data);
+}
+
+/** "Set your password": an old link-made account picks its password once, then signs in. No email is sent. */
+export async function setFirstPassword(_: AuthState, form: FormData): Promise<AuthState> {
+  const email = Email.safeParse(form.get("email"));
+  if (!email.success) return { error: "err.email_invalid" };
+  const password = String(form.get("password") ?? "");
+  if (!Password.safeParse(password).success) return { error: "err.password_short", step: "setpw", email: email.data };
+  const res = await setFirstPasswordCore(
+    {
+      hasNoPassword,
+      findAuthUserId,
+      setPassword: setAuthPassword,
+      signIn: async (e, p) => !(await authClient().auth.signInWithPassword({ email: e, password: p })).error,
+      markSet: async (e) => {
+        await q(`insert into users (email) values ($1) on conflict (email) do nothing`, [e]);
+        await q(`update users set password_set_at = now() where email = $1`, [e]);
+      },
+      log: (msg, e) => console.info(msg, e),
+    },
+    { email: email.data, password, confirm: String(form.get("confirm") ?? "") },
+  );
+  if (!res.ok) {
+    // Already has a password: back to the normal sign-in form with the message.
+    if (res.error === "err.password_already_set") return { error: res.error, email: email.data, mode: "signin" };
+    return { error: res.error, step: "setpw", email: email.data };
+  }
+  return startSession(email.data);
+}
+
+/** "Joined with an email link before?": asks for the email only. */
+export async function checkOldAccount(_: AuthState, form: FormData): Promise<AuthState> {
+  const email = Email.safeParse(form.get("email"));
+  if (!email.success) return { error: "err.email_invalid" };
+  if (await hasNoPassword(email.data)) return { step: "setpw", email: email.data };
+  return { error: "err.password_already_set", email: email.data };
 }
 
 export async function chooseRole(_: AuthState, form: FormData): Promise<AuthState> {

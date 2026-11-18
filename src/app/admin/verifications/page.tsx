@@ -7,6 +7,7 @@ import { EmptyState, PageTitle, Section, StatusBadge, fmtDate, timeAgo } from "@
 import { reviewVerification } from "@/app/actions/admin";
 import { SubmitButton } from "@/components/SubmitButton";
 import { AiUsage } from "../AiUsage";
+import { SignInHelp } from "../SignInHelp";
 
 export const metadata = { title: "ID checks" };
 
@@ -14,7 +15,8 @@ function hoursLeftOf(submitted: unknown) {
   return Math.max(0, 72 - Math.floor((Date.now() - new Date(String(submitted)).getTime()) / 36e5));
 }
 
-export default async function AdminVerifications() {
+export default async function AdminVerifications({ searchParams }: { searchParams: Promise<{ user?: string }> }) {
+  const sp = await searchParams;
   const user = await requireUser("admin");
   const t = await getT();
   const lang = await getLang();
@@ -83,6 +85,7 @@ export default async function AdminVerifications() {
           </ul>
         </Section>
       )}
+      <SignInHelp search={sp.user} />
       <AiUsage t={t} />
     </AppShell>
   );
