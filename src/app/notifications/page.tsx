@@ -12,7 +12,7 @@ export const metadata = { title: "Notifications" };
 
 function linkFor(role: string | null, type: string, p: Record<string, string>) {
   if (type === "verification_requested") return "/admin/verifications";
-  if (type.startsWith("verification_")) return "/student/onboarding";
+  if (type.startsWith("verification_")) return "/student/profile";
   if (type === "report_regenerated" && role === "student" && p.engagementId) return `/student/engagements/${p.engagementId}`;
   if (p.engagementId) return role === "business" ? `/business/engagements/${p.engagementId}` : `/student/engagements/${p.engagementId}`;
   return "#";

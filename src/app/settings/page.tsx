@@ -33,7 +33,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <div className="flex justify-between gap-3 p-4"><dt className="text-ink-3">{t("auth.email")}</dt><dd className="truncate font-semibold">{user.email}</dd></div>
             <div className="flex justify-between gap-3 p-4"><dt className="text-ink-3">{t("settings.role")}</dt><dd className="font-semibold">{t(`settings.role_${user.role}`)}</dd></div>
           </dl>
-          {user.role === "student" && <Link href="/student/onboarding" className="btn-secondary mt-3 w-full">{t("settings.edit_student")}</Link>}
+          {user.role === "student" && <Link href="/student/profile" className="btn-secondary mt-3 w-full">{t("settings.edit_student")}</Link>}
         </Section>
         {biz && (
           <Section title={t("settings.business")}>

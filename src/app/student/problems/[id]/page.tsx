@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireStudent } from "@/lib/guards";
 import { one } from "@/lib/db";
 import { getT, getLang } from "@/lib/i18n/server";
-import { BackLink, Notice, Section, fmtDate } from "@/components/ui";
+import { BackLink, Section, fmtDate } from "@/components/ui";
 import { ScrollToTakeUp } from "./ScrollToTakeUp";
 import { CategoryChips, ProblemStatement, TakerCount, NewBadge, FitReason } from "@/components/ProblemBits";
 import { gapsFor, liveProblems, suggestions } from "@/lib/matching";
@@ -18,7 +18,7 @@ export const maxDuration = 60;
 
 export const metadata = { title: "Problem" };
 
-export default async function StudentProblem({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ takeup?: string; notice?: string }> }) {
+export default async function StudentProblem({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ takeup?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const { user, profile } = await requireStudent();
@@ -38,7 +38,6 @@ export default async function StudentProblem({ params, searchParams }: { params:
     const m = (await suggestions(user.id, profile, await liveProblems())).get(id);
     if (m) fit = m.reason;
   }
-  const canTake = ["verified", "pending"].includes(profile.verification_status);
   const active = mine && mine.status !== "withdrawn";
   const ring = sp.takeup === "1" && !active && p.status === "live";
   const action = (
@@ -53,11 +52,7 @@ export default async function StudentProblem({ params, searchParams }: { params:
             ) : (
               <>
                 <p className="text-sm text-ink-2">{t("problem.take_help", { business: p.business_name })}</p>
-                {canTake ? (
-                  <TakeUpButton problemId={id} />
-                ) : (
-                  <Link href={`/student/onboarding?next=/student/problems/${id}&intent=takeup`} className="btn-accent w-full">Take up this problem</Link>
-                )}
+                <TakeUpButton problemId={id} />
               </>
             )}
           </div>
@@ -65,8 +60,6 @@ export default async function StudentProblem({ params, searchParams }: { params:
   return (
     <div>
       <BackLink href="/student/problems" label={t("nav.problems")} />
-      {sp.notice === "already" && <Notice kind="info" className="mb-5">You&apos;ve already taken up this problem. Open your workspace to carry on.</Notice>}
-      {sp.notice === "closed" && <Notice kind="warn" className="mb-5">This problem isn&apos;t taking new students any more. Your ID is saved, so you can take up another one straight away.</Notice>}
       {ring && <ScrollToTakeUp />}
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div>

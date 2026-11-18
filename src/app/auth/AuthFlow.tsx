@@ -1,8 +1,9 @@
 "use client";
 import { useActionState, useState } from "react";
-import { signIn, signUp, chooseRole, setFirstPassword, checkOldAccount, type AuthState } from "@/app/actions/auth";
+import { signIn, createAccount, chooseRole, setFirstPassword, checkOldAccount, type AuthState } from "@/app/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
 import { useT } from "@/lib/i18n/client";
+import { StudentIdField } from "./StudentIdField";
 
 type Role = "student" | "business";
 
@@ -53,7 +54,7 @@ function RoleBadge({ role, onChange }: { role: Role; onChange: () => void }) {
 export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialStep: "email" | "role"; defaultRole?: Role; demo?: boolean }) {
   const t = useT();
   const [inState, inAction] = useActionState<AuthState, FormData>(signIn, {});
-  const [upState, upAction] = useActionState<AuthState, FormData>(signUp, {});
+  const [upState, upAction] = useActionState<AuthState, FormData>(createAccount, {});
   const [roleState, roleAction] = useActionState<AuthState, FormData>(chooseRole, {});
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [role, setRole] = useState<Role | undefined>(defaultRole);
@@ -65,7 +66,8 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
   const [askOld, setAskOld] = useState(false);
   const setpw = [pwState, oldState, inState, upState].find((s) => s.step === "setpw" && !dismissed.includes(s));
 
-  const signedIn = initialStep === "role" || inState.step === "role" || upState.step === "role" || pwState.step === "role";
+  // Only accounts with no role yet (old email-link accounts) see the name + consent step; new sign-ups do it all on one page.
+  const signedIn = initialStep === "role" || inState.step === "role" || pwState.step === "role";
   const state = mode === "signin" ? inState : upState;
   // "That email already has an account" switches to sign-in with the email kept.
   const email = state.email ?? (mode === "signin" ? upState.email : inState.email) ?? "";
@@ -152,9 +154,16 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
         <h1 className="text-2xl font-bold">{t(mode === "signup" ? "auth.signup_title" : "auth.signin_title")}</h1>
         <p className="mt-1 text-ink-2">{t(mode === "signup" ? "auth.signup_sub" : "auth.signin_sub")}</p>
       </div>
+      {mode === "signup" && (
+        <div>
+          <label className="label" htmlFor="name">{role === "business" ? t("auth.your_name_owner") : t("auth.your_name")}</label>
+          <input id="name" name="name" className="input" autoComplete="name" required minLength={2} maxLength={80} defaultValue={upState.name ?? ""} autoFocus />
+        </div>
+      )}
+      {mode === "signup" && <input type="hidden" name="role" value={role} />}
       <div>
         <label className="label" htmlFor="email">{t("auth.email")}</label>
-        <input id="email" name="email" type="email" inputMode="email" autoComplete="email" required className="input" defaultValue={email} placeholder={role === "student" ? "name@college.ac.in" : "name@gmail.com"} autoFocus />
+        <input id="email" name="email" type="email" inputMode="email" autoComplete="email" required className="input" defaultValue={email} placeholder={role === "student" ? "name@college.ac.in" : "name@gmail.com"} autoFocus={mode === "signin"} />
       </div>
       <div>
         <label className="label" htmlFor="password">{t("auth.password")}</label>
@@ -167,6 +176,13 @@ export function AuthFlow({ initialStep, defaultRole, demo = false }: { initialSt
         </div>
         {mode === "signup" && <p className="mt-2 text-xs text-ink-3">{t("auth.password_hint")}</p>}
       </div>
+      {mode === "signup" && role === "student" && <StudentIdField />}
+      {mode === "signup" && (
+        <label className="flex items-start gap-3 text-sm text-ink-2">
+          <input type="checkbox" name="consent" className="mt-0.5 h-5 w-5 shrink-0 accent-primary" required />
+          <span>{t("auth.consent")}</span>
+        </label>
+      )}
       {(pwBack?.error ?? state.error) && (
         <div className="rounded-xl border-2 border-alert/30 bg-alert-soft p-3 text-sm font-semibold text-alert" role="alert">
           {t((pwBack?.error ?? state.error)!)}

@@ -32,9 +32,7 @@ async function logStatus(engId: string, status: string, reason: string | null = 
 }
 
 export async function takeUp(studentId: string, problemId: string): Promise<Result> {
-  const sp = await one(`select verification_status from student_profiles where user_id = $1`, [studentId]);
-  // Round 4: an uploaded ID is verified straight away; older "pending" uploads may take up too. Rejected or none: no.
-  if (!["verified", "pending"].includes(sp?.verification_status)) return { ok: false, error: "err.not_verified" };
+  // Round 5: every student can take up a problem; the student ID is never a gate.
   const p = await one(`select id, status, business_id, title from problems where id = $1`, [problemId]);
   if (!p || p.status !== "live") return { ok: false, error: "err.problem_closed" };
   const existing = await one(`select id, status from engagements where problem_id = $1 and student_id = $2`, [problemId, studentId]);

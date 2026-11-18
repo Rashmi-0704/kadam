@@ -9,11 +9,12 @@ import { setSession, currentUser, homeFor } from "@/lib/session";
 import { DEMO_ACCOUNTS } from "@/db/seed-data";
 import { hasNoPassword, findAuthUserId, setAuthPassword } from "@/lib/legacy-auth";
 import { setFirstPasswordCore } from "@/lib/first-password";
+import { handleStudentId, ID_MAX_BYTES, isIdType } from "@/lib/student-id";
 
 const Email = z.string().trim().toLowerCase().email();
 const Password = z.string().min(8).max(72);
 
-export type AuthState = { ok?: boolean; error?: string; step?: "role" | "setpw"; email?: string; mode?: "signin" | "signup" };
+export type AuthState = { ok?: boolean; error?: string; step?: "role" | "setpw"; email?: string; name?: string; mode?: "signin" | "signup" };
 
 /** Sign-in with email + password. Kadam sends no auth emails at all (see BUILD_LOG: switching email flows back on needs custom SMTP). */
 async function startSession(email: string): Promise<AuthState> {
@@ -24,24 +25,55 @@ async function startSession(email: string): Promise<AuthState> {
   redirect(homeFor(user!.role));
 }
 
-export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
+/**
+ * Round 5: one-page sign-up. Name, email, password, consent and role in one form (plus a student ID file for students).
+ * Creates the account (service key, confirmed straight away, no email sent), signs in, creates the users row with the role,
+ * name and consent, and for a student the profile. A student ID is handled after that; any failure there is silent.
+ */
+export async function createAccount(_: AuthState, form: FormData): Promise<AuthState> {
+  const name = String(form.get("name") ?? "").trim().slice(0, 80);
+  const role = form.get("role");
   const email = Email.safeParse(form.get("email"));
-  if (!email.success) return { error: "err.email_invalid", mode: "signup" };
+  const keep = { name, mode: "signup" as const };
+  if (role !== "student" && role !== "business") return { error: "err.pick_role", ...keep };
+  if (name.length < 2) return { error: "err.name", email: email.success ? email.data : undefined, ...keep };
+  if (!email.success) return { error: "err.email_invalid", ...keep };
   const password = Password.safeParse(String(form.get("password") ?? ""));
-  if (!password.success) return { error: "err.password_short", email: email.data, mode: "signup" };
-  if (!hasSupabaseAdmin()) return { error: "err.auth_unavailable", email: email.data, mode: "signup" };
+  if (!password.success) return { error: "err.password_short", email: email.data, ...keep };
+  if (form.get("consent") !== "on") return { error: "err.consent", email: email.data, ...keep };
+  const idFile = role === "student" ? form.get("student_id") : null;
+  const file = idFile instanceof File && idFile.size > 0 ? idFile : null;
+  if (file && (file.size > ID_MAX_BYTES || !isIdType(file.type))) return { error: file.size > ID_MAX_BYTES ? "err.file_too_large" : "err.id_file_type", email: email.data, ...keep };
+  if (!hasSupabaseAdmin()) return { error: "err.auth_unavailable", email: email.data, ...keep };
   // An account made with an email link (no password yet) sets its password instead of "account exists".
   if (await hasNoPassword(email.data)) return { step: "setpw", email: email.data, mode: "signup" };
-  // Created on the server with the service key and confirmed straight away: no email is sent, whatever the dashboard's "Confirm email" setting is.
   const { error } = await adminClient().auth.admin.createUser({ email: email.data, password: password.data, email_confirm: true });
   if (error) {
     const exists = error.status === 422 || /already|exists|registered/i.test(error.message);
     if (!exists) console.warn("[auth] create failed", error.status);
-    return { error: exists ? "err.account_exists" : "err.auth_unavailable", email: email.data, mode: exists ? "signin" : "signup" };
+    return { error: exists ? "err.account_exists" : "err.auth_unavailable", email: email.data, name, mode: exists ? "signin" : "signup" };
   }
   const { error: signInError } = await authClient().auth.signInWithPassword({ email: email.data, password: password.data });
   if (signInError) return { error: "err.auth_unavailable", email: email.data, mode: "signin" };
-  return startSession(email.data);
+  const user = (await one<{ id: string; role: string | null }>(
+    `insert into users (email, role, name, consent_at) values ($1,$2,$3,now())
+     on conflict (email) do update set role = coalesce(users.role, excluded.role), name = coalesce(users.name, excluded.name), consent_at = coalesce(users.consent_at, excluded.consent_at)
+     returning id, role`,
+    [email.data, role, name],
+  ))!;
+  await setSession(user.id);
+  if (user.role === "student") {
+    await q(`insert into student_profiles (user_id, verification_status) values ($1, 'not_started') on conflict (user_id) do nothing`, [user.id]);
+    if (file) {
+      try {
+        await handleStudentId({ id: user.id, name }, file);
+      } catch (e) {
+        console.warn("[signup] student ID not saved", e instanceof Error ? e.message : "unknown");
+      }
+    }
+  }
+  // New students start on their profile (CV and paths); new businesses on their business details.
+  redirect(user.role === "student" ? "/student/profile" : user.role === "business" ? "/business/onboarding" : homeFor(user.role as "admin"));
 }
 
 export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
@@ -109,7 +141,7 @@ export async function chooseRole(_: AuthState, form: FormData): Promise<AuthStat
   await q(`update users set role = $2, name = $3, consent_at = now() where id = $1`, [u.id, role, name]);
   if (role === "student") {
     await q(`insert into student_profiles (user_id, verification_status) values ($1, 'not_started') on conflict (user_id) do nothing`, [u.id]);
-    redirect("/student/onboarding");
+    redirect("/student/profile");
   }
   redirect("/business/onboarding");
 }

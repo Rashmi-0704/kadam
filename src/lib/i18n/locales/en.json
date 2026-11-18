@@ -106,7 +106,6 @@
   "err.pick_role": "Please choose one option.",
   "err.consent": "Please agree to continue.",
   "err.name": "Please enter your name.",
-  "err.not_verified": "Add your student ID to take up problems.",
   "err.problem_closed": "This problem is not taking new students.",
   "err.cannot_submit": "You can't submit at this stage.",
   "err.describe_more": "Please add a few more words.",
@@ -114,6 +113,7 @@
   "err.not_allowed": "That change isn't possible right now.",
   "err.reason_required": "Please write a clear reason so the student can learn from it.",
   "err.file_too_large": "That file is too big. Please keep files under 4 MB.",
+  "err.id_file_type": "Please choose a photo or a PDF for your student ID.",
   "err.ai_busy": "Kadam is busy right now. Please try again in a moment.",
   "demo.title": "Quick sign-in",
   "demo.sub": "Choose an account to open Kadam as that person.",
@@ -690,7 +690,7 @@
   "auth.tab_signup": "Create account",
   "auth.tab_signin": "Sign in",
   "auth.signup_title": "Create your account",
-  "auth.signup_sub": "Just an email and a password. No codes, no waiting for emails.",
+  "auth.signup_sub": "One page. No codes, no waiting for emails.",
   "auth.signin_title": "Welcome back",
   "auth.signin_sub": "Sign in with your email and password.",
   "auth.password": "Password",
@@ -770,5 +770,6 @@
   "bd.impact_none_title": "No results yet",
   "bd.impact_empty": "When a student's work helps your business, the results show here.",
   "bd.help_title": "Easier to speak? Record your problem in your language",
-  "bd.help_btn": "Record a problem"
+  "bd.help_btn": "Record a problem",
+  "bv.id_checked": "ID checked"
 }

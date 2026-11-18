@@ -7,6 +7,8 @@ import { PathwayEditor, PathwayView, type Paths } from "@/components/PathwayCard
 import { answerCareerIntake, finishCareerIntakeNow, restartIntake, editPathways } from "@/app/actions/student";
 import { SubmitButton } from "@/components/SubmitButton";
 import { CvUpload } from "./CvUpload";
+import { StudentIdCard } from "./StudentIdCard";
+import { one } from "@/lib/db";
 import { Notice, PageTitle, fmtDate } from "@/components/ui";
 import { hasServerStt } from "@/lib/stt";
 import { AiBusyNotice } from "@/components/AiBusyNotice";
@@ -23,6 +25,16 @@ export default async function ProfilePage() {
   const t = await getT();
   const lang = await getLang();
   const steps = [t("profile.rail1"), t("profile.rail2"), t("profile.rail3")];
+  // Round 5: the Student ID card sits at the end of every profile state.
+  const rejectedNote = profile.verification_status === "rejected"
+    ? String((await one(`select note from verification_requests where student_id = $1 and status = 'rejected' order by reviewed_at desc nulls last limit 1`, [user.id]))?.note ?? "") || "The photo wasn't a clear student ID."
+    : null;
+  const details = { college: profile.college ?? "", course: profile.course ?? "", year: profile.year ?? "" };
+  const idCard = (
+    <div className="mt-8 max-w-2xl">
+      <StudentIdCard key={String(profile.verification_status)} hasId={["verified", "pending"].includes(profile.verification_status)} rejectedNote={rejectedNote} details={details} />
+    </div>
+  );
   const cv = profile.cv_parsed as { skills?: string[]; education?: { degree: string; institution: string }[] } | null;
 
   if (!cv) {
@@ -32,6 +44,7 @@ export default async function ProfilePage() {
         <h1 className="mt-5 text-2xl font-bold sm:text-3xl">{t("profile.cv_title")}</h1>
         <p className="mt-1 mb-6 text-ink-2">{t("profile.cv_sub")}</p>
         <CvUpload />
+        {idCard}
       </div>
     );
   }
@@ -56,6 +69,7 @@ export default async function ProfilePage() {
             <SubmitButton className="btn-secondary" pendingLabel={t("profile.building")}>{t("profile.build_now")}</SubmitButton>
           </form>
         )}
+        {idCard}
       </div>
     );
   }
@@ -69,6 +83,7 @@ export default async function ProfilePage() {
         <p className="mt-1 mb-6 max-w-2xl text-ink-2">{t("profile.paths_sub")}</p>
         {(await hasBusyFlag(`pathways:${user.id}`)) && <AiBusyNotice className="mb-4 max-w-2xl" message="ai.busy_basic" retry={retryPathways} />}
         <PathwayEditor key={profile.updated_at ? String(profile.updated_at) : undefined} initial={paths} />
+        {idCard}
       </div>
     );
   }
@@ -78,7 +93,7 @@ export default async function ProfilePage() {
       <PageTitle
         eyebrow={t("profile.eyebrow")}
         title={user.name ?? ""}
-        sub={[profile.course, profile.year, profile.college].filter(Boolean).join(" · ")}
+        sub={[profile.course, profile.year, profile.college].filter((x) => typeof x === "string" && x.trim()).join(" · ") || undefined}
       />
       <Notice kind="success" className="mb-6">{t("profile.approved_on", { date: fmtDate(profile.approved_at, lang) })}</Notice>
       <PathwayView paths={paths} />
@@ -100,6 +115,7 @@ export default async function ProfilePage() {
           <form action={restartIntake}><SubmitButton className="btn-ghost w-full">{t("profile.start_over")}</SubmitButton></form>
         </div>
       </div>
+      {idCard}
     </div>
   );
 }
