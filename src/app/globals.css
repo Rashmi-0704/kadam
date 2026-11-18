@@ -257,3 +257,7 @@ h1, h2, h3, .font-display {
   .hl::after, .hl-pill::after, .glow-card::before, .pulse-dot::after, .hw-row { animation: none !important; }
   .hl-spark { transition: none; }
 }
+
+/* Dashboard progress ring: grows once (see ProgressRing). */
+.ring-arc { transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) { .ring-arc { transition: none; } }

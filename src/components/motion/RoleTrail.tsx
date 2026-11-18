@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { TRAIL_ROLES } from "@/db/trail-roles";
 
 /*
@@ -29,15 +29,12 @@ function shuffled<T>(a: readonly T[]) {
 export function RoleTrail() {
   const layer = useRef<HTMLDivElement>(null);
   const line = useRef<SVGPolylineElement>(null);
-  const [on, setOn] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const set = () => setOn(!mq.matches);
-    set();
-    mq.addEventListener("change", set);
-    return () => mq.removeEventListener("change", set);
-  }, []);
+  // On only when motion is allowed (and never during server render).
+  const on = useSyncExternalStore(
+    (cb) => { const mq = window.matchMedia("(prefers-reduced-motion: reduce)"); mq.addEventListener("change", cb); return () => mq.removeEventListener("change", cb); },
+    () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
 
   useEffect(() => {
     if (!on) return;

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CountUp } from "./scene/Motion";
+import { CountUp } from "./motion/CountUp";
+import { Reveal } from "./motion/Reveal";
 
 export type Insight = { label: string; value: number; suffix?: string; hint?: string; href?: string; tone: "ink" | "primary" | "success" | "info"; icon: React.ReactNode };
 
@@ -14,7 +15,7 @@ const TONE: Record<Insight["tone"], string> = {
 /** Big, glanceable numbers at the top of a dashboard. */
 export function InsightTiles({ items }: { items: Insight[] }) {
   return (
-    <ul className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <Reveal as="ul" className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
       {items.map((it, i) => {
         const inner = (
           <>
@@ -33,12 +34,12 @@ export function InsightTiles({ items }: { items: Insight[] }) {
         );
         const cls = `glow-card relative block h-full rounded-2xl border-2 p-4 sm:p-5 ${TONE[it.tone]}`;
         return (
-          <li key={it.label}>
+          <li key={it.label} data-reveal>
             {it.href ? <Link href={it.href} className={`${cls} transition hover:-translate-y-0.5`} style={{ "--glow-delay": `${-i * 5}s` } as React.CSSProperties}>{inner}</Link> : <div className={cls} style={{ "--glow-delay": `${-i * 5}s` } as React.CSSProperties}>{inner}</div>}
           </li>
         );
       })}
-    </ul>
+    </Reveal>
   );
 }
 
